@@ -1,1 +1,41 @@
 # pyroe
+
+## Introduction
+
+[`Alevin-fry`](https://github.com/COMBINE-lab/alevin-fry) is a fast, accurate, and memory frugal quantification tool for preprocessing single-cell RNA-sequencing data. Detailed information can be found in the alevin-fry [manuscript](https://www.biorxiv.org/content/10.1101/2021.06.29.450377v2).
+
+The `pyroe` package provides useful functions for preparing input files required by `alevin-fry`, which consists of
+
+1. preparing the *splici* reference for the `USA` mode of `alevin-fry`, which will export a unspliced, a spliced, and an ambiguous molecule count for each gene within each cell.
+
+## Installlation
+The `pyroe` package can be accessed from its [github repository](https://github.com/COMBINE-lab/pyroe), installed via [`pip`](https://pip.pypa.io/en/stable/), or via [`bioconda`](https://bioconda.github.io). To install the `pyroe` package via `pip` use the command:
+
+```
+pip install pyroe
+```
+
+
+## Preparing a splici index for quantification with alevin-fry
+
+The USA mode in alevin-fry requires a special index reference, which is called the *splici* reference. The *splici* reference contains the spliced transcripts plus the intronic sequences of each gene. The `make_splici_txome()` function is designed to make the *splici* reference by taking a genome FASTA file and a gene annotation GTF file as the input. Details about the *splici* can be found in Section S2 of the supplementary file of the [alevin-fry manuscript](https://www.biorxiv.org/content/10.1101/2021.06.29.450377v2). To run pyroe, you also need to specify the read length argument `read_length` of the experiment you are working on and the flank trimming length `flank_trim_length`. A final flank length will be computed as the difference between the read_length and flank trimming length and will be attached to the ends of each intron to absorb the intron-exon junctional reads.
+
+Following is an example of calling the `pyroe` to make the *splici* index reference. The final flank length is calculated as the difference between the read length and the flank_trim_length, i.e., $5-2=3$. This function allows you to add extra spliced and unspliced sequences to the *splici* index, which will be useful when some unannotated sequences, such as mitochondrial genes, are important for your experiment. 
+
+```
+pyroe --gtf extdata/small_example.gtf --genome extdata/small_example_genome.fa --read-length 5 \
+      --flank-trim-legth 2 --output-dir splici_txome --file-prefix transcriptome_splici
+```
+
+The `pyroe` program writes two files to your specified output directory `output_dir`. They are 
+- A FASTA file that stores the extracted splici sequences.
+- A three columns' transcript-name-to-gene-name file that stores the name of each transcript in the splici index reference, their corresponding gene name, and the splicing status (`S` for spliced and `U` for unspliced) of those transcripts.
+
+### the *splici* index
+
+The *splici* index of a given species consists of the transcriptome of the species, i.e., the spliced transcripts, and the intronic sequences of the species. Within a gene, if the flanked intronic sequences overlap with each other, the overlapped intronic sequences will be collapsed as a single intronic sequence to make sure each base will appear only once in the intronic sequences. For more detailed information, please check the section S2 in the supplementary file of [alevin-fry manuscript](https://www.biorxiv.org/content/10.1101/2021.06.29.450377v2).
+
+
+
+
+
