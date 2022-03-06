@@ -155,7 +155,10 @@ def make_splici_txome(
     gr = pr.read_gtf(gtf_path)
 
     # get introns
-    introns = gr.features.introns(by="transcript", nb_cpu=5)
+    # the introns() function uses inplace=True argument from pandas,
+    # which will trigger an FutureWarning. 
+    warnings.simplefilter(action='ignore', category=FutureWarning)
+    introns = gr.features.introns(by="transcript")
     introns.Name = introns.gene_id
     introns_merged = introns.merge(strand=True, by=["Name"], slack=0)
     introns_merged.Gene = introns_merged.Name
@@ -170,6 +173,7 @@ def make_splici_txome(
     ## deduplicate introns
     if dedup_seqs:
         introns_merged_extended.drop_duplicate_positions()
+
 
     # get exons
     exons = gr[gr.Feature == "exon"]
@@ -244,7 +248,7 @@ def make_splici_txome(
                 # get all records on that chromosome
                 chr_records = introns_merged_extended[introns_merged_extended.Chromosome == seq_record.id].df
                 if not chr_records.empty:
-                    chr_records.Strand = chr_records.Strand.replace(['+', '-'],[+1, -1])
+                    chr_records.Strand.update(chr_records.Strand.replace(['+', '-'],[+1, -1]))
                     # init seq list
                     intron_seqs = []
                     # for each intron record
