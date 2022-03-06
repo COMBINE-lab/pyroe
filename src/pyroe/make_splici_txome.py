@@ -155,7 +155,7 @@ def make_splici_txome(
     gr = pr.read_gtf(gtf_path)
 
     # get introns
-    introns = gr.features.introns(by="transcript", nb_cpu=5)
+    introns = gr.features.introns(by="transcript")
     introns.Name = introns.gene_id
     introns_merged = introns.merge(strand=True, by=["Name"], slack=0)
     introns_merged.Gene = introns_merged.Name
