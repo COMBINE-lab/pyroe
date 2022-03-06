@@ -284,7 +284,7 @@ def make_splici_txome(
                     # write all spliced transcript serquence at once.
                     SeqIO.write(txp_seqs, out_handle, "fasta")
 
-        # append extra spliced transcript onto splici
+    # append extra spliced transcript onto splici
     if extra_spliced is not None:
         ## trim outbounded introns
         with open(extra_spliced) as extra_spliced_fa:
