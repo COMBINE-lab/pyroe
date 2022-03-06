@@ -1,0 +1,9 @@
+##description: evidence-based annotation of the mouse genome (GRCm38), version M23 (Ensembl 98)
+##provider: GENCODE
+##contact: gencode-help@ebi.ac.uk
+##format: gtf
+##date: 2019-09-06
+chr1	HAVANA	gene	11	50	.	-	.	gene_id "ENSMUSG00000051951"; gene_version "5"; gene_type "protein_coding"; gene_name "Xkr4"; level 2; mgi_id "MGI:3528744"; havana_gene "OTTMUSG00000026353.2";
+chr1	HAVANA	transcript	11	50	.	-	.	gene_id "ENSMUSG00000051951"; gene_version "5"; transcript_id "ENSMUST00000162897"; transcript_version "1"; gene_type "protein_coding"; gene_name "Xkr4"; transcript_type "lncRNA"; transcript_name "Xkr4-203"; level 2; transcript_support_level "1"; mgi_id "MGI:3528744"; havana_gene "OTTMUSG00000026353.2"; havana_transcript "OTTMUST00000086625.1";
+chr1	HAVANA	exon	11	20	.	-	.	gene_id "ENSMUSG00000051951"; gene_version "5"; transcript_id "ENSMUST00000162897"; transcript_version "1"; gene_type "protein_coding"; gene_name "Xkr4"; transcript_type "lncRNA"; transcript_name "Xkr4-203"; exon_number 1; exon_id "ENSMUSE00000858910"; exon_version "1"; level 2; transcript_support_level "1"; mgi_id "MGI:3528744"; havana_gene "OTTMUSG00000026353.2"; havana_transcript "OTTMUST00000086625.1";
+chr1	HAVANA	exon	31	50	.	-	.	gene_id "ENSMUSG00000051951"; gene_version "5"; transcript_id "ENSMUST00000162897"; transcript_version "1"; gene_type "protein_coding"; gene_name "Xkr4"; transcript_type "lncRNA"; transcript_name "Xkr4-203"; exon_number 2; exon_id "ENSMUSE00000866652"; exon_version "1"; level 2; transcript_support_level "1"; mgi_id "MGI:3528744"; havana_gene "OTTMUSG00000026353.2"; havana_transcript "OTTMUST00000086625.1";
