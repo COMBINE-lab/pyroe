@@ -1,9 +1,17 @@
 
 
+
+
+
+
+
+
+
 def make_splici_txome(
     genome_path,
     gtf_path,
     read_length,
+
     output_dir,
     flank_trim_length=5,
     filename_prefix = "splici",
@@ -36,16 +44,24 @@ def make_splici_txome(
     flank_trim_length : int
         The flank trimming length. 
         The final flank length is obtained by subtracting
+
+
         the flank_trim_length from the read_length.
 
+
     filename_prefix : str
+
         The file name prefix of the generated output files. 
         The derived flank length will be automatically
+
         appended to the provided prefix.
+
+
 
     extra_spliced : str
 
         A path to a fasta file. The records in this fasta file will be 
+
 
         regarded as spliced transcripts.
 
@@ -76,16 +92,25 @@ def make_splici_txome(
 
     """
     
+
     import pandas as pd
     import pyranges as pr
+
     import warnings
+
     import os
+
     import subprocess
     import shutil
 
+    from packaging.version import parse as parse_version
+
+
     from Bio import SeqIO
+
     from Bio.Seq import Seq
     from Bio.SeqFeature import SeqFeature, FeatureLocation
+
     from Bio.SeqRecord import SeqRecord
     from Bio.SeqIO.FastaIO import SimpleFastaParser
 
@@ -105,47 +130,50 @@ def make_splici_txome(
     if not os.path.isfile(gtf_path):
         raise IOError("Cannot open the input gtf file!")
 
+
+    def check_bedtools_version(bt_check_path):
+        vstr = subprocess.run([bt_path, "--version"],
+            capture_output=True).stdout.decode().strip().split("v")[1]
+        found_ver = parse_version(vstr)
+        req_ver = parse_version("2.30.0")
+        return found_ver >= req_ver
+
     ## check bedtools
     if not no_bt:
-        try:
-            # try default setting 
-            [btv_major, btv_minor, btv_patch] = subprocess.run([bt_path, "--version"], 
-                        capture_output=True
-                        ).stdout.decode().strip().split("v")[1].split(".")
-            # Check version
-            if int(btv_major) < 2 & int(btv_minor) < 30:
-                raise ValueError("Old bedtools found.")
-        except:
-            # if bt_path is user-defined, try bedtools in the default path
-            if bt_path != "bedtools":
+        # check at the provided path
+        if not check_bedtools_version(bt_path):
+            # if it's not ok at the provided path, check
+            # the standard system path
+            if bt_path == "bedtools":
+                # in this case, there's nowhere else to check
+                # so give up on bedtools
+                print("bedtools in the environemnt PATH is either",
+                      "older than v.2.30.0 or doesn't exist.",
+                      "\nBiopython will be used.")
+                no_bt = True
+            else:
                 print("bedtools specified by bt_path is either",
                         "older than v.2.30.0 or doesn't exist.",
                         "\nTry finding bedtools in the environmental PATH.")
-                try:
-                    # try bedtools in default path
-                    [btv_major, btv_minor, btv_patch] = subprocess.run(["bedtools", "--version"], 
-                                capture_output=True
-                            ).stdout.decode().strip().split("v")[1].split(".")
-                    # check version
-                    if int(btv_major) < 2 & int(btv_minor) < 30:
-                        raise Exception("Please update bedtools to at least v2.30.0!")
-                except:
-                    # If bedtools in the default path doesn't work
-                    # use biopython to write fasta file.
-                    print("bedtools in the environemnt PATH is either",
+                # if it's not ok at the standard system path
+                # fallback to biopython
+                if not check_bedtools_version("bedtools"):
+                     print("bedtools in the environemnt PATH is either",
                             "older than v.2.30.0 or doesn't exist.",
                             "\nBiopython will be used.")
-                    no_bt = True
-
+                     no_bt = True
+                # found it at the system path
                 else:
                     bt_path = "bedtools"
-                    print("Use bedtools in the environmental PATH.")
-
+                    print("Using bedtools in the environmental PATH.")
+        else: # bedtools found
+            pass
 
     ## create out folder and temp folder inside
     ### create output folder
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
+
 
     ### create temp folder
     temp_dir = os.path.join(output_dir, "temp")
@@ -164,12 +192,16 @@ def make_splici_txome(
 
     # get introns
     # the introns() function uses inplace=True argument from pandas,
+
+
     # which will trigger an FutureWarning. 
     warnings.simplefilter(action='ignore', category=FutureWarning)
     introns = gr.features.introns(by="transcript")
+
     introns.Name = introns.gene_id
     introns_merged = introns.merge(strand=True, by=["Name"], slack=0)
     introns_merged.Gene = introns_merged.Name
+
     introns_merged_extended = introns_merged.extend(flank_length)
     introns_merged_extended.Name = ["-I".join(map(str, z)) for tid, size in introns_merged_extended.Name.value_counts().items() for z in zip([tid] * size, list(range(1, size + 1)))]
 
@@ -194,6 +226,8 @@ def make_splici_txome(
     
     # concat spliced transcripts and introns as splici
     splici = pr.concat([exons, introns_merged_extended])
+
+
     # splici = splici.sort(["Name", "Start", "End", "Gene"])
     
     # write to files
@@ -205,11 +239,15 @@ def make_splici_txome(
     # splici fasta
     if not no_bt:
         try:
+
             # write bed file
             splici.to_bed(temp_bed, keep=True)
 
             # run bedtools, ignore strand for now
+
+
             bt_r = subprocess.run(" ".join([bt_path, "getfasta",
+
                                             "-fi", genome_path,
                                             "-fo", temp_fa, 
                                             "-bed", temp_bed,
@@ -248,11 +286,17 @@ def make_splici_txome(
             no_bt = True
             warnings.warn("Bedtools failed, use biopython instead.")
 
+
+
+
+
     if no_bt:
         from Bio import SeqIO
         from Bio.Seq import Seq
         from Bio.SeqFeature import SeqFeature, FeatureLocation
         from Bio.SeqRecord import SeqRecord
+
+
         from Bio.SeqIO.FastaIO import SimpleFastaParser
         with open(out_fa, "w") as out_handle:
             # read fasta, process a chromosome at a time
@@ -297,6 +341,8 @@ def make_splici_txome(
                             txp_seqs.append(sum(exon_seqs, Seq("")))
                     # write all spliced transcript serquence at once.
                     SeqIO.write(txp_seqs, out_handle, "fasta")
+
+
 
     # append extra spliced transcript onto splici
     if extra_spliced is not None:
