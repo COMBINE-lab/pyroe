@@ -300,7 +300,7 @@ def make_splici_txome(
                 # get all records on that chromosome
                 chr_records = introns_merged_extended[introns_merged_extended.Chromosome == seq_record.id].df
                 if not chr_records.empty:
-                    chr_records.Strand.update(chr_records.Strand.replace(['+', '-'],[+1, -1]))
+                    chr_records.Strand = chr_records.Strand.replace(['+', '-'],[+1, -1])
                     # init seq list
                     intron_seqs = []
                     # for each intron record
