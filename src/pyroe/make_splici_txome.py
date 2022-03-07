@@ -1,3 +1,5 @@
+
+
 def make_splici_txome(
     genome_path,
     gtf_path,
@@ -42,7 +44,9 @@ def make_splici_txome(
         appended to the provided prefix.
 
     extra_spliced : str
+
         A path to a fasta file. The records in this fasta file will be 
+
         regarded as spliced transcripts.
 
     extra_unspliced : str
@@ -86,8 +90,10 @@ def make_splici_txome(
     from Bio.SeqIO.FastaIO import SimpleFastaParser
 
     # Preparation
+
     ## check flanking length
     flank_length = read_length - flank_trim_length
+
     if flank_length < 0:
         raise ValueError("Flank trim length cannot be larger than read length!")
 
@@ -130,9 +136,11 @@ def make_splici_txome(
                             "older than v.2.30.0 or doesn't exist.",
                             "\nBiopython will be used.")
                     no_bt = True
+
                 else:
                     bt_path = "bedtools"
                     print("Use bedtools in the environmental PATH.")
+
 
     ## create out folder and temp folder inside
     ### create output folder
@@ -175,8 +183,10 @@ def make_splici_txome(
         introns_merged_extended.drop_duplicate_positions()
 
 
+
     # get exons
     exons = gr[gr.Feature == "exon"]
+
     exons.Name = exons.transcript_id
     exons.Gene = exons.gene_id
     exons = exons.drop(exons.columns[~exons.columns.isin(introns_merged_extended.columns)].tolist())
@@ -217,11 +227,13 @@ def make_splici_txome(
             prev_rec.id = prev_rec.id.split("(")[0]
             prev_rec.description = ""
             with open(out_fa, "w") as out_handle:
+
                 for seq_record in ei_parser:
                     seq_record.id = seq_record.id.split("(")[0]
                     seq_record.description = ""
                     if seq_record.id == prev_rec.id:
                         prev_rec += seq_record
+
                     else:
                         if tid2strand[prev_rec.id] == "-":
                             prev_rec = prev_rec.reverse_complement(id=True, description=True)
@@ -260,12 +272,14 @@ def make_splici_txome(
                     # finally, write all intron sequences at once.
                     SeqIO.write(intron_seqs, out_handle, "fasta")
 
+
                 # Then, process spliced transcripts
                 chr_records = exons[exons.Chromosome == seq_record.id].df
                 if not chr_records.empty:
                     txp_seqs = []
                     # as spliced txps are the concat of all exon sequences, fist get the sequence of each exon separately,then sum them up.
                     for (tid, exon_records) in chr_records.groupby("Name"):
+
                         # init exon seq list
                         exon_seqs = []
                         # get the sequence of each exon
@@ -316,41 +330,3 @@ def make_splici_txome(
 
 
 
-if __name__ == "__main__":
-    import argparse
-
-    # Create the parser
-    parser = argparse.ArgumentParser(description='The pyroe package provides useful functions for preparing input files required by alevin-fry.',
-                                        prog='pyroe')
-    subparsers = parser.add_subparsers(title='subcommands',
-                                        description='valid subcommands',
-                                        help='additional help')
-    parser_makeSplici = subparsers.add_parser('make-splici', help='Make splici reference')
-    parser_makeSplici.add_argument('genome_path', metavar='genome-path', type=str, help='The path to a gtf file.')
-    parser_makeSplici.add_argument('gtf_path', metavar='gtf-path', type=str, help='The path to a gtf file.')
-    parser_makeSplici.add_argument('read_length', metavar='read-length', type=int, help='Read length (determines flank size).')
-    parser_makeSplici.add_argument('output_dir', metavar='output-dir', type=str, help='Output directory where splici reference information will be written.')
-    parser_makeSplici.add_argument('--filename-prefix', type=str, default="splici", help='The file name prefix of the generated output files.')
-    parser_makeSplici.add_argument('--flank-trim-length', type=int, default=5, help='Determines the amount subtracted from the read length to get the flank length.')
-    parser_makeSplici.add_argument('--extra-spliced', type=str, help='The path to an extra spliced sequence fasta file.')
-    parser_makeSplici.add_argument('--extra-unspliced', type=str, help='The path to an extra unspliced sequence fasta file.')
-    parser_makeSplici.add_argument('--bt-path', type=str, default="bedtools", help='The path to bedtools.')
-    parser_makeSplici.add_argument('--dedup-seqs', action='store_true', help='a flag indicates whether to deduplicate identical sequences.')
-    parser_makeSplici.add_argument('--no-bt', action='store_true', help='A flag indicates whether to disable bedtools.')
-
-    # Execute the parse_args() method
-    args = parser.parse_args()
-    
-    make_splici_txome(
-    genome_path=args.genome_path,
-    gtf_path=args.gtf_path,
-    read_length=args.read_length,
-    output_dir=args.output_dir,
-    flank_trim_length=args.flank_trim_length,
-    filename_prefix=args.filename_prefix,
-    extra_spliced=args.extra_spliced,
-    extra_unspliced=args.extra_unspliced,
-    dedup_seqs=args.dedup_seqs,
-    no_bt=args.no_bt,
-    bt_path=args.bt_path
-)
