@@ -1,12 +1,4 @@
 
-
-
-
-
-
-
-
-
 def make_splici_txome(
     genome_path,
     gtf_path,
@@ -132,11 +124,15 @@ def make_splici_txome(
 
 
     def check_bedtools_version(bt_check_path):
-        vstr = subprocess.run([bt_path, "--version"],
-            capture_output=True).stdout.decode().strip().split("v")[1]
-        found_ver = parse_version(vstr)
-        req_ver = parse_version("2.30.0")
-        return found_ver >= req_ver
+        try:
+            vstr = subprocess.run([bt_path, "--version"],
+                                  capture_output=True).stdout.decode().strip().split("v")[1]
+            found_ver = parse_version(vstr)
+            req_ver = parse_version("2.30.0")
+            return found_ver >= req_ver
+        except:
+            # in this case couldn't even run subprocess
+            return False
 
     ## check bedtools
     if not no_bt:
