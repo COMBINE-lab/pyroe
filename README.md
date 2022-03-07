@@ -20,16 +20,44 @@ pip install pyroe
 
 The USA mode in alevin-fry requires a special index reference, which is called the *splici* reference. The *splici* reference contains the spliced transcripts plus the intronic sequences of each gene. The `make_splici_txome()` function is designed to make the *splici* reference by taking a genome FASTA file and a gene annotation GTF file as the input. Details about the *splici* can be found in Section S2 of the supplementary file of the [alevin-fry manuscript](https://www.biorxiv.org/content/10.1101/2021.06.29.450377v2). To run pyroe, you also need to specify the read length argument `read_length` of the experiment you are working on and the flank trimming length `flank_trim_length`. A final flank length will be computed as the difference between the read_length and flank trimming length and will be attached to the ends of each intron to absorb the intron-exon junctional reads.
 
-Following is an example of calling the `pyroe` to make the *splici* index reference. The final flank length is calculated as the difference between the read length and the flank_trim_length, i.e., $5-2=3$. This function allows you to add extra spliced and unspliced sequences to the *splici* index, which will be useful when some unannotated sequences, such as mitochondrial genes, are important for your experiment. 
+Following is an example of calling the `pyroe` to make the *splici* index reference. The final flank length is calculated as the difference between the read length and the flank_trim_length, i.e., 5-2=3. This function allows you to add extra spliced and unspliced sequences to the *splici* index, which will be useful when some unannotated sequences, such as mitochondrial genes, are important for your experiment. 
 
 ```
-pyroe --gtf extdata/small_example.gtf --genome extdata/small_example_genome.fa --read-length 5 \
-      --flank-trim-legth 2 --output-dir splici_txome --file-prefix transcriptome_splici
+pyroe extdata/small_example_genome.fa extdata/small_example.gtf 5 splici_txome \
+      --flank-trim-legth 2 --file-prefix transcriptome_splici --dedup-seqs
 ```
 
 The `pyroe` program writes two files to your specified output directory `output_dir`. They are 
 - A FASTA file that stores the extracted splici sequences.
 - A three columns' transcript-name-to-gene-name file that stores the name of each transcript in the splici index reference, their corresponding gene name, and the splicing status (`S` for spliced and `U` for unspliced) of those transcripts.
+
+## Full usage
+
+```
+usage: pyroe make-splici [-h] [--filename-prefix FILENAME_PREFIX] [--flank-trim-length FLANK_TRIM_LENGTH] [--extra-spliced EXTRA_SPLICED]
+                         [--extra-unspliced EXTRA_UNSPLICED] [--bt-path BT_PATH] [--dedup-seqs] [--no-bt]
+                         genome-path gtf-path read-length output-dir
+
+positional arguments:
+  genome-path           The path to a gtf file.
+  gtf-path              The path to a gtf file.
+  read-length           Read length (determines flank size).
+  output-dir            Output directory where splici reference information will be written.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --filename-prefix FILENAME_PREFIX
+                        The file name prefix of the generated output files.
+  --flank-trim-length FLANK_TRIM_LENGTH
+                        Determines the amount subtracted from the read length to get the flank length.
+  --extra-spliced EXTRA_SPLICED
+                        The path to an extra spliced sequence fasta file.
+  --extra-unspliced EXTRA_UNSPLICED
+                        The path to an extra unspliced sequence fasta file.
+  --bt-path BT_PATH     The path to bedtools.
+  --dedup-seqs          a flag indicates whether to deduplicate identical sequences.
+  --no-bt               A flag indicates whether to disable bedtools.
+```
 
 ### the *splici* index
 
