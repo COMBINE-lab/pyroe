@@ -97,6 +97,7 @@ def make_splici_txome(
 
     from packaging.version import parse as parse_version
 
+    from Bio import SeqIO
     from Bio.SeqIO.FastaIO import SimpleFastaParser
 
     # Preparation
@@ -279,7 +280,6 @@ def make_splici_txome(
 
 
     if no_bt:
-        from Bio import SeqIO
 
         from Bio.Seq import Seq
         from Bio.SeqFeature import SeqFeature, FeatureLocation
