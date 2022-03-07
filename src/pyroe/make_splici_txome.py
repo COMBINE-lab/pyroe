@@ -97,13 +97,6 @@ def make_splici_txome(
 
     from packaging.version import parse as parse_version
 
-
-    from Bio import SeqIO
-
-    from Bio.Seq import Seq
-    from Bio.SeqFeature import SeqFeature, FeatureLocation
-
-    from Bio.SeqRecord import SeqRecord
     from Bio.SeqIO.FastaIO import SimpleFastaParser
 
     # Preparation
@@ -154,16 +147,15 @@ def make_splici_txome(
                 # if it's not ok at the standard system path
                 # fallback to biopython
                 if not check_bedtools_version("bedtools"):
-                     print("bedtools in the environemnt PATH is either",
+                    print("bedtools in the environemnt PATH is either",
                             "older than v.2.30.0 or doesn't exist.",
                             "\nBiopython will be used.")
-                     no_bt = True
+                    no_bt = True
                 # found it at the system path
                 else:
                     bt_path = "bedtools"
                     print("Using bedtools in the environmental PATH.")
-        else: # bedtools found
-            pass
+
 
     ## create out folder and temp folder inside
     ### create output folder
@@ -171,17 +163,10 @@ def make_splici_txome(
         os.makedirs(output_dir)
 
 
-    ### create temp folder
-    temp_dir = os.path.join(output_dir, "temp")
-    if not os.path.exists(temp_dir):
-        os.makedirs(temp_dir)
-
     ## specify output file names
     filename_prefix = filename_prefix + "_fl" + str(flank_length)
     out_fa = os.path.join(output_dir, filename_prefix + ".fa")
     out_t2g3col = os.path.join(output_dir, filename_prefix + "_t2g_3col.tsv")
-    temp_fa = os.path.join(temp_dir, "temp.fa")
-    temp_bed = os.path.join(temp_dir, "temp.bed")
 
     # load gtf
     gr = pr.read_gtf(gtf_path)
@@ -236,6 +221,13 @@ def make_splici_txome(
     if not no_bt:
         try:
 
+            ### create temp folder
+            temp_dir = os.path.join(output_dir, "temp")
+            if not os.path.exists(temp_dir):
+                os.makedirs(temp_dir)
+            temp_fa = os.path.join(temp_dir, "temp.fa")
+            temp_bed = os.path.join(temp_dir, "temp.bed")
+
             # write bed file
             splici.to_bed(temp_bed, keep=True)
 
@@ -281,19 +273,19 @@ def make_splici_txome(
         except:
             no_bt = True
             warnings.warn("Bedtools failed, use biopython instead.")
-
+            shutil.rmtree(temp_dir, ignore_errors=True)
 
 
 
 
     if no_bt:
         from Bio import SeqIO
+
         from Bio.Seq import Seq
         from Bio.SeqFeature import SeqFeature, FeatureLocation
+
         from Bio.SeqRecord import SeqRecord
-
-
-        from Bio.SeqIO.FastaIO import SimpleFastaParser
+        
         with open(out_fa, "w") as out_handle:
             # read fasta, process a chromosome at a time
             for seq_record in SeqIO.parse(genome_path, "fasta"):
