@@ -24,7 +24,7 @@ Following is an example of calling the `pyroe` to make the *splici* index refere
 
 ```
 pyroe extdata/small_example_genome.fa extdata/small_example.gtf 5 splici_txome \
-      --flank-trim-legth 2 --file-prefix transcriptome_splici --dedup-seqs
+      --flank-trim-legth 2 --filename-prefix transcriptome_splici --dedup-seqs
 ```
 
 The `pyroe` program writes two files to your specified output directory `output_dir`. They are 
