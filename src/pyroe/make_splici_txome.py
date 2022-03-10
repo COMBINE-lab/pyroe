@@ -11,7 +11,8 @@ def make_splici_txome(
     extra_unspliced = None,
     dedup_seqs = False,
     no_bt = False,
-    bt_path = "bedtools"
+    bt_path = "bedtools",
+    pre_flanking_merge = False
 ):
     """
     Construct the splici (spliced + introns) transcriptome for alevin-fry.
@@ -36,25 +37,18 @@ def make_splici_txome(
     flank_trim_length : int
         The flank trimming length. 
         The final flank length is obtained by subtracting
-
-
         the flank_trim_length from the read_length.
 
 
     filename_prefix : str
-
         The file name prefix of the generated output files. 
         The derived flank length will be automatically
-
         appended to the provided prefix.
 
 
 
     extra_spliced : str
-
         A path to a fasta file. The records in this fasta file will be 
-
-
         regarded as spliced transcripts.
 
     extra_unspliced : str
@@ -64,13 +58,17 @@ def make_splici_txome(
     dedup_seqs : bool
         If True, the repeated sequences in the splici reference will be
         deduplicated.
+
     no_bt : bool
         If true, biopython, instead of bedtools, will not be used for 
         extracting sequences from genome file.
 
     bt_path : str
         The path to bedtools if it is not in the environment PATH. 
-        
+
+    pre_flanking_merge : bool
+        If true, overlapping introns caused by adding flanking length will not be merged.
+
     Returns
     -------
     Nothing will be returned. The splici reference files will be written 
@@ -174,27 +172,31 @@ def make_splici_txome(
 
     # get introns
     # the introns() function uses inplace=True argument from pandas,
-
-
     # which will trigger an FutureWarning. 
     warnings.simplefilter(action='ignore', category=FutureWarning)
     introns = gr.features.introns(by="transcript")
-
     introns.Name = introns.gene_id
-    introns_merged = introns.merge(strand=True, by=["Name"], slack=0)
-    introns_merged.Gene = introns_merged.Name
 
-    introns_merged_extended = introns_merged.extend(flank_length)
-    introns_merged_extended.Name = ["-I".join(map(str, z)) for tid, size in introns_merged_extended.Name.value_counts().items() for z in zip([tid] * size, list(range(1, size + 1)))]
+    if pre_flanking_merge:
+        introns = introns.merge(strand=True, by=["Name"], slack=1)
+
+    introns = introns.extend(flank_length)
+
+    if not pre_flanking_merge:
+        introns = introns.merge(strand=True, by=["Name"], slack=1)
+
+    introns.Gene = introns.Name
+
+    introns.Name = ["-I".join(map(str, z)) for tid, size in introns.Name.value_counts().items() for z in zip([tid] * size, list(range(1, size + 1)))]
 
     ## trim outbounded introns
     with open(genome_path) as fasta_file:
         chromsize =  {title.split()[0]:len(sequence) for title, sequence in SimpleFastaParser(fasta_file)}
-    introns_merged_extended = pr.gf.genome_bounds(introns_merged_extended, chromsize, clip=True)
+    introns = pr.gf.genome_bounds(introns, chromsize, clip=True)
 
     ## deduplicate introns
     if dedup_seqs:
-        introns_merged_extended.drop_duplicate_positions()
+        introns.drop_duplicate_positions()
 
 
 
@@ -203,11 +205,11 @@ def make_splici_txome(
 
     exons.Name = exons.transcript_id
     exons.Gene = exons.gene_id
-    exons = exons.drop(exons.columns[~exons.columns.isin(introns_merged_extended.columns)].tolist())
+    exons = exons.drop(exons.columns[~exons.columns.isin(introns.columns)].tolist())
     exons = exons.sort(["Name", "Start", "End"])
     
     # concat spliced transcripts and introns as splici
-    splici = pr.concat([exons, introns_merged_extended])
+    splici = pr.concat([exons, introns])
 
 
     # splici = splici.sort(["Name", "Start", "End", "Gene"])
@@ -233,10 +235,7 @@ def make_splici_txome(
             splici.to_bed(temp_bed, keep=True)
 
             # run bedtools, ignore strand for now
-
-
             bt_r = subprocess.run(" ".join([bt_path, "getfasta",
-
                                             "-fi", genome_path,
                                             "-fo", temp_fa, 
                                             "-bed", temp_bed,
@@ -244,6 +243,7 @@ def make_splici_txome(
                                             "-nameOnly"]),
                                     shell=True,
                                     capture_output=True)
+
             # check return code
             if bt_r.returncode != 0:
                 raise ValueError("Bedtools failed.")
@@ -290,7 +290,7 @@ def make_splici_txome(
             # read fasta, process a chromosome at a time
             for seq_record in SeqIO.parse(genome_path, "fasta"):
                 # get all records on that chromosome
-                chr_records = introns_merged_extended[introns_merged_extended.Chromosome == seq_record.id].df
+                chr_records = introns[introns.Chromosome == seq_record.id].df
                 if not chr_records.empty:
                     chr_records.Strand = chr_records.Strand.replace(['+', '-'],[+1, -1])
                     # init seq list
