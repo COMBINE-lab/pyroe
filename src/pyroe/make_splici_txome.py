@@ -176,12 +176,12 @@ def make_splici_txome(
     introns = gr.features.introns(by="transcript")
     introns.Name = introns.gene_id
 
-    if pre_flanking_merge:
+    if no_flanking_merge:
         introns = introns.merge(strand=True, by=["Name"], slack=1)
 
     introns = introns.extend(flank_length)
 
-    if not pre_flanking_merge:
+    if not no_flanking_merge:
         introns = introns.merge(strand=True, by=["Name"], slack=1)
 
     introns.Gene = introns.Name
