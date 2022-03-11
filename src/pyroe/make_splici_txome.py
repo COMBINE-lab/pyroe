@@ -3,7 +3,6 @@ def make_splici_txome(
     genome_path,
     gtf_path,
     read_length,
-
     output_dir,
     flank_trim_length=5,
     filename_prefix = "splici",
@@ -19,20 +18,21 @@ def make_splici_txome(
 
     Required Parameters
     ----------
-    gtf_path : str
-        The path to a gtf file.
-
     genome_path : str
         The path to a genome fasta file.
+
+    gtf_path : str
+        The path to a gtf file.
 
     read_length : int
         The read length of the single-cell experiment being processed.
     
-    Optional Parameters
-    ----------
     output_dir : str
         The output directory, where the splici reference files will 
         be written.
+
+    Optional Parameters
+    ----------
 
     flank_trim_length : int
         The flank trimming length. 
@@ -44,8 +44,6 @@ def make_splici_txome(
         The file name prefix of the generated output files. 
         The derived flank length will be automatically
         appended to the provided prefix.
-
-
 
     extra_spliced : str
         A path to a fasta file. The records in this fasta file will be 
@@ -60,14 +58,14 @@ def make_splici_txome(
         deduplicated.
 
     no_bt : bool
-        If true, biopython, instead of bedtools, will not be used for 
-        extracting sequences from genome file.
+        If true, biopython, instead of bedtools, will be used for 
+        generating splici reference files.
 
     bt_path : str
         The path to bedtools if it is not in the environment PATH. 
 
     no_flanking_merge : bool
-        If true, overlapping introns caused by adding flanking length will not be merged.
+        If true, overlapping introns caused by the added flanking length will not be merged.
 
     Returns
     -------
@@ -186,7 +184,6 @@ def make_splici_txome(
         introns = introns.merge(strand=True, by=["Name"], slack=1)
 
     introns.Gene = introns.Name
-
     introns.Name = ["-I".join(map(str, z)) for tid, size in introns.Name.value_counts().items() for z in zip([tid] * size, list(range(1, size + 1)))]
 
     ## trim outbounded introns
@@ -197,6 +194,9 @@ def make_splici_txome(
     ## deduplicate introns
     if dedup_seqs:
         introns.drop_duplicate_positions()
+    
+    ## add splice status for introns
+    introns.splice_status = "U"
 
 
 
@@ -207,7 +207,9 @@ def make_splici_txome(
     exons.Gene = exons.gene_id
     exons = exons.drop(exons.columns[~exons.columns.isin(introns.columns)].tolist())
     exons = exons.sort(["Name", "Start", "End"])
-    
+    ## add splice status for exons
+    exons.splice_status = "S"
+
     # concat spliced transcripts and introns as splici
     splici = pr.concat([exons, introns])
 
@@ -216,7 +218,7 @@ def make_splici_txome(
     
     # write to files
     ## t2g_3col.tsv
-    splici.df[["Name", "Gene"]].drop_duplicates().to_csv(out_t2g3col, sep="\t", header=False, index=False)
+    splici.df[["Name", "Gene", "splice_status"]].drop_duplicates().to_csv(out_t2g3col, sep="\t", header=False, index=False)
     # print(splici.head())
     tid2strand = dict(zip(splici.Name, splici.Strand))
 
