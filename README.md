@@ -44,9 +44,10 @@ usage: pyroe make-splici [-h] [--filename-prefix FILENAME_PREFIX]
 positional arguments:
   genome-path           The path to a gtf file.
   gtf-path              The path to a gtf file.
-  read-length           Read length (determines flank size).
-  output-dir            Output directory where splici reference information
-                        will be written.
+  read-length           The read length of the single-cell experiment 
+                          being processed (determines flank size).
+  output-dir            The output directory where splici reference 
+                          files will be written.
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -59,12 +60,12 @@ optional arguments:
                         The path to an extra spliced sequence fasta file.
   --extra-unspliced EXTRA_UNSPLICED
                         The path to an extra unspliced sequence fasta file.
-  --bt-path BT_PATH     The path to bedtools.
-  --dedup-seqs          a flag indicates whether to deduplicate identical
-                        sequences.
+  --bt-path BT_PATH     The path to bedtools v2.30.0 or greater.
+  --dedup-seqs          A flag indicates whether identical sequences will be
+                          deduplicated.
   --no-bt               A flag indicates whether to disable bedtools.
   --no-flanking-merge   A flag indicates whether introns will be merged after
-                        adding flanking length.
+                          adding flanking length.
 ```
 
 ### the *splici* index

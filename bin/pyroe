@@ -21,8 +21,8 @@ if __name__ == "__main__":
     parser_makeSplici.add_argument('--flank-trim-length', type=int, default=5, help='Determines the amount subtracted from the read length to get the flank length.')
     parser_makeSplici.add_argument('--extra-spliced', type=str, help='The path to an extra spliced sequence fasta file.')
     parser_makeSplici.add_argument('--extra-unspliced', type=str, help='The path to an extra unspliced sequence fasta file.')
-    parser_makeSplici.add_argument('--bt-path', type=str, default="bedtools", help='The path to bedtools.')
-    parser_makeSplici.add_argument('--no-bt', action='store_true', help='A flag indicates whether or not bedtools will be used for generating splici reference files.')
+    parser_makeSplici.add_argument('--bt-path', type=str, default="bedtools", help='The path to bedtools v2.30.0 or greater.')
+    parser_makeSplici.add_argument('--no-bt', action='store_true', help='A flag indicates whether bedtools will be used for generating splici reference files.')
     parser_makeSplici.add_argument('--dedup-seqs', action='store_true', help='A flag indicates whether identical sequences will be deduplicated.')
     parser_makeSplici.add_argument('--no-flanking-merge', action='store_true', help='A flag indicates whether flank lengths will be considered when merging introns.')
 
