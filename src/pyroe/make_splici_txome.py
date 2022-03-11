@@ -45,8 +45,6 @@ def make_splici_txome(
         The derived flank length will be automatically
         appended to the provided prefix.
 
-
-
     extra_spliced : str
         A path to a fasta file. The records in this fasta file will be 
         regarded as spliced transcripts.
@@ -66,8 +64,8 @@ def make_splici_txome(
     bt_path : str
         The path to bedtools if it is not in the environment PATH. 
 
-    pre_flanking_merge : bool
-        If true, overlapping introns caused by adding flanking length will not be merged.
+    no_flanking_merge : bool
+        If true, overlapping introns caused by the added flanking length will not be merged.
 
     Returns
     -------
