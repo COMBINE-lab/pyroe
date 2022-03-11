@@ -12,7 +12,7 @@ def make_splici_txome(
     dedup_seqs = False,
     no_bt = False,
     bt_path = "bedtools",
-    pre_flanking_merge = False
+    no_flanking_merge = False
 ):
     """
     Construct the splici (spliced + introns) transcriptome for alevin-fry.
@@ -66,7 +66,7 @@ def make_splici_txome(
     bt_path : str
         The path to bedtools if it is not in the environment PATH. 
 
-    pre_flanking_merge : bool
+    no_flanking_merge : bool
         If true, overlapping introns caused by adding flanking length will not be merged.
 
     Returns
@@ -177,12 +177,12 @@ def make_splici_txome(
     introns = gr.features.introns(by="transcript")
     introns.Name = introns.gene_id
 
-    if pre_flanking_merge:
+    if no_flanking_merge:
         introns = introns.merge(strand=True, by=["Name"], slack=1)
 
     introns = introns.extend(flank_length)
 
-    if not pre_flanking_merge:
+    if not no_flanking_merge:
         introns = introns.merge(strand=True, by=["Name"], slack=1)
 
     introns.Gene = introns.Name
