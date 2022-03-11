@@ -8,7 +8,7 @@ The `pyroe` package provides useful functions for preparing input files required
 
 1. preparing the *splici* reference for the `USA` mode of `alevin-fry`, which will export a unspliced, a spliced, and an ambiguous molecule count for each gene within each cell.
 
-## Installlation
+## Installation
 The `pyroe` package can be accessed from its [github repository](https://github.com/COMBINE-lab/pyroe), installed via [`pip`](https://pip.pypa.io/en/stable/), or via [`bioconda`](https://bioconda.github.io). To install the `pyroe` package via `pip` use the command:
 
 ```
