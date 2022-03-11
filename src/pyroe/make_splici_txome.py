@@ -67,6 +67,7 @@ def make_splici_txome(
     no_flanking_merge : bool
         If true, overlapping introns caused by the added flanking length will not be merged.
 
+
     Returns
     -------
     Nothing will be returned. The splici reference files will be written 
