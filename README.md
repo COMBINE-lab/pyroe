@@ -2,7 +2,7 @@
 
 ## Introduction
 
-[`Alevin-fry`](https://github.com/COMBINE-lab/alevin-fry) is a fast, accurate, and memory frugal quantification tool for preprocessing single-cell RNA-sequencing data. Detailed information can be found in the alevin-fry [manuscript](https://www.biorxiv.org/content/10.1101/2021.06.29.450377v2).
+[`Alevin-fry`](https://github.com/COMBINE-lab/alevin-fry) is a fast, accurate, and memory frugal quantification tool for preprocessing single-cell RNA-sequencing data. Detailed information can be found in the alevin-fry [pre-print](https://www.biorxiv.org/content/10.1101/2021.06.29.450377v2), and [paper](https://www.nature.com/articles/s41592-022-01408-3).
 
 The `pyroe` package provides useful functions for preparing input files required by `alevin-fry`, which consists of
 
@@ -14,7 +14,6 @@ The `pyroe` package can be accessed from its [github repository](https://github.
 ```
 pip install pyroe
 ```
-
 
 ## Preparing a splici index for quantification with alevin-fry
 
@@ -34,29 +33,38 @@ The `pyroe` program writes two files to your specified output directory `output_
 ## Full usage
 
 ```
-usage: pyroe make-splici [-h] [--filename-prefix FILENAME_PREFIX] [--flank-trim-length FLANK_TRIM_LENGTH] [--extra-spliced EXTRA_SPLICED]
-                         [--extra-unspliced EXTRA_UNSPLICED] [--bt-path BT_PATH] [--dedup-seqs] [--no-bt]
+usage: pyroe make-splici [-h] [--filename-prefix FILENAME_PREFIX]
+                         [--flank-trim-length FLANK_TRIM_LENGTH]
+                         [--extra-spliced EXTRA_SPLICED]
+                         [--extra-unspliced EXTRA_UNSPLICED]
+                         [--bt-path BT_PATH] [--dedup-seqs] [--no-bt]
+                         [--no-flanking-merge]
                          genome-path gtf-path read-length output-dir
 
 positional arguments:
   genome-path           The path to a gtf file.
   gtf-path              The path to a gtf file.
   read-length           Read length (determines flank size).
-  output-dir            Output directory where splici reference information will be written.
+  output-dir            Output directory where splici reference information
+                        will be written.
 
 optional arguments:
   -h, --help            show this help message and exit
   --filename-prefix FILENAME_PREFIX
                         The file name prefix of the generated output files.
   --flank-trim-length FLANK_TRIM_LENGTH
-                        Determines the amount subtracted from the read length to get the flank length.
+                        Determines the amount subtracted from the read length
+                        to get the flank length.
   --extra-spliced EXTRA_SPLICED
                         The path to an extra spliced sequence fasta file.
   --extra-unspliced EXTRA_UNSPLICED
                         The path to an extra unspliced sequence fasta file.
   --bt-path BT_PATH     The path to bedtools.
-  --dedup-seqs          a flag indicates whether to deduplicate identical sequences.
+  --dedup-seqs          a flag indicates whether to deduplicate identical
+                        sequences.
   --no-bt               A flag indicates whether to disable bedtools.
+  --no-flanking-merge   A flag indicates whether introns will be merged after
+                        adding flanking length.
 ```
 
 ### the *splici* index
