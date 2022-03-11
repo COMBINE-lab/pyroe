@@ -24,7 +24,7 @@ if __name__ == "__main__":
     parser_makeSplici.add_argument('--bt-path', type=str, default="bedtools", help='The path to bedtools.')
     parser_makeSplici.add_argument('--dedup-seqs', action='store_true', help='a flag indicates whether to deduplicate identical sequences.')
     parser_makeSplici.add_argument('--no-bt', action='store_true', help='A flag indicates whether to disable bedtools.')
-    parser_makeSplici.add_argument('--pre-flanking-merge', action='store_true', help='A flag indicates whether introns are merged before adding flanking length.')
+    parser_makeSplici.add_argument('--no-flanking-merge', action='store_true', help='A flag indicates whether flank lengths will be considered when merging introns.')
 
     # Execute the parse_args() method
     args = parser.parse_args()
@@ -44,4 +44,4 @@ if __name__ == "__main__":
     dedup_seqs=args.dedup_seqs,
     no_bt=args.no_bt,
     bt_path=args.bt_path,
-    pre_flanking_merge=args.pre_flanking_merge)
+    no_flanking_merge=args.no_flanking_merge)
