@@ -62,7 +62,7 @@ def make_splici_txome(
         generating splici reference files.
 
     bt_path : str
-        The path to bedtools if it is not in the environment PATH. 
+        The path to bedtools v2.30.0 or greater if it is not in the environment PATH. 
 
     no_flanking_merge : bool
         If true, overlapping introns caused by the added flanking length will not be merged.
