@@ -16,6 +16,22 @@ The `pyroe` package can be accessed from its [github repository](https://github.
 pip install pyroe
 ```
 
+To make use of the `load_fry` function (which, itself, installs [scanpy](https://scanpy.readthedocs.io/en/stable/)), you should also be sure to install the package with the `scanpy` extra:
+
+```
+pip install pyroe[scanpy]
+```
+
+Alternatively, `pyroe` can be installed via `bioconda`, which will automatically install the variant of the package including `load_fry`, and will
+also install `bedtools` to enable faster construction of the *splici* reference (see below).  This installation can be performed with the command:
+
+```
+conda install pyroe
+```
+
+with the appropriate bioconda channel in the conda channel list.
+
+
 ## Preparing a splici index for quantification with alevin-fry
 
 The USA mode in alevin-fry requires a special index reference, which is called the *splici* reference. The *splici* reference contains the spliced transcripts plus the intronic sequences of each gene. The `make_splici_txome()` function is designed to make the *splici* reference by taking a genome FASTA file and a gene annotation GTF file as the input. Details about the *splici* can be found in Section S2 of the supplementary file of the [alevin-fry paper](https://www.nature.com/articles/s41592-022-01408-3). To run pyroe, you also need to specify the read length argument `read_length` of the experiment you are working on and the flank trimming length `flank_trim_length`. A final flank length will be computed as the difference between the read_length and flank trimming length and will be attached to the ends of each intron to absorb the intron-exon junctional reads.
