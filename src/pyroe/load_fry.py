@@ -7,7 +7,7 @@ except ModuleNotFoundError as e:
 
 import scanpy
 
-def load_fry(frydir, output_format="scRNA", verbose=True, non_zero = False):
+def load_fry(frydir, output_format="scRNA", nonzero = False, quiet=False):
     """
     load alevin-fry quantification result into an AnnData object
     
@@ -24,13 +24,14 @@ def load_fry(frydir, output_format="scRNA", verbose=True, non_zero = False):
         If a customized format of the returned `AnnData` is needed, one can pass a Dictionary.\\
         See Notes section for details.
 
-    quiet : `bool` (default: `True`)
-        True if function should be quiet.
-        False if messages (including error messages) should be printed out. 
-        
     nonzero : `bool` (default: `False`)
         True if cells with non-zero expression value across all genes should be filtered in each layer.
         False if unexpressed genes should be kept.
+
+    quiet : `bool` (default: `False`)
+        True if function should be quiet.
+        False if messages (including error messages) should be printed out. 
+
     Notes
     ----------
     The `output_format` argument takes either a dictionary that defines the customized format or 
@@ -94,7 +95,7 @@ def load_fry(frydir, output_format="scRNA", verbose=True, non_zero = False):
     # first, check for the new file, if we don't find it, check
     # for the old one.
     if not os.path.exists(fpath):
-        if verbose:
+        if quiet:
             print(f"Did not find a {meta_info_files[0]} file, checking for older {meta_info_files[1]}.")
         fpath = os.path.sep.join([frydir, meta_info_files[1]])
         # if we don't find the old one either, then return None
@@ -107,7 +108,7 @@ def load_fry(frydir, output_format="scRNA", verbose=True, non_zero = False):
     meta_info = json.load(open(fpath))
     ng = meta_info['num_genes']
     usa_mode = meta_info['usa_mode']
-    if verbose:
+    if quiet:
         print(f"USA mode: {usa_mode}")
 
     # if we are in USA mode
@@ -116,8 +117,8 @@ def load_fry(frydir, output_format="scRNA", verbose=True, non_zero = False):
         # each gene has 3 splicing statuses, so the actual number of distinct 
         # genes is ng/3.
         ng = int(ng/3)
-        output_assays = process_output_format(output_format, verbose)
-    elif verbose:
+        output_assays = process_output_format(output_format, quiet)
+    elif quiet:
         print("Processing input in standard mode, the count matrix will be stored in field 'X'.")
         if output_format != "scRNA":
             print("Output_format will be ignored.")
@@ -159,7 +160,7 @@ def load_fry(frydir, output_format="scRNA", verbose=True, non_zero = False):
                 o += x[:, rd[wc]] 
             af.layers[other_layer] = o
     
-    if non_zero:
+    if nonzero:
         import numpy as np
 
         not_zero_genes = af.X.sum(axis=0).A1 > 0
@@ -169,12 +170,12 @@ def load_fry(frydir, output_format="scRNA", verbose=True, non_zero = False):
 
         af = af[:, not_zero_genes]
 
-        if verbose:
+        if quiet:
             print(f"Filtered {np.sum(~not_zero_genes)} non-expressed genes.")
     
     return af
 
-def process_output_format(output_format, verbose):
+def process_output_format(output_format, quiet):
     # make sure output_format isn't empty
     if not output_format:
         raise ValueError("output_format cannot be empty")  
@@ -190,11 +191,11 @@ def process_output_format(output_format, verbose):
             output_format = output_format.lower()
             if output_format not in predefined_format.keys():
                 # invalid output_format string
-                if verbose:
+                if quiet:
                     print("Provided output_format string must be 'scRNA', 'snRNA', 'raw' or 'velocity'.")
                     print("See function help message for details.")
                 raise ValueError("Invalid output_format.")
-            if verbose:
+            if quiet:
                 print("Using pre-defined output format:", output_format)
                 print(f"Will populate output field X with sum of counts frorm {predefined_format[output_format]['X']}.")
                 for (k,v) in predefined_format[output_format].items():
@@ -203,7 +204,7 @@ def process_output_format(output_format, verbose):
 
             return predefined_format[output_format]
         else:
-            if verbose:
+            if quiet:
                 print("Processing user-defined output format.")
             # make sure the X is there
             if 'X' not in output_format.keys():
@@ -220,7 +221,7 @@ def process_output_format(output_format, verbose):
                 if len(set(v) - set(['U', 'S', 'A'])) != 0:
                     # invalid value
                     raise ValueError(f"Found non-USA element in output_format element list '{v}' for key '{k}'; cannot proceed.")
-                if verbose and (k != 'X'):
+                if quiet and (k != 'X'):
                     print(f'Will combine {v} into output layer {k}.') 
 
             return output_format
