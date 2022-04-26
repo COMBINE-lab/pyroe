@@ -1,6 +1,6 @@
 from .pyroe_utils import say
-# from fetch_processed_quant import fetch_processed_quant
-# from load_fry import load_fry
+from .fetch_processed_quant import fetch_processed_quant
+from .load_fry import load_fry
 
 
 def load_processed_quant(
@@ -147,14 +147,20 @@ def load_processed_quant(
         if list(output_format.keys()).sort() != dataset_ids.sort():
             # now it should be one customized format
             output_format = dict(zip(dataset_ids, [output_format]*nd))
-        # otherwise, each dataset should get a format, so do nothing
+        # otherwise, each dataset should get a format, so check the length
+        if len(output_format) != nd:
+            raise ValueError("The providing output_format list has different length with dataset_ids, cannot proceed")
     elif (type(output_format) is str):
         # if a str is given, it should be a pre-defined format
         # and it will be used for all datasets
         output_format = dict(zip(dataset_ids, [output_format]*nd))
+    else:
+        raise ValueError("The providing output_format list has different length with dataset_ids, cannot proceed")
 
-
-    if type(nonzero) is bool:
+    if type(nonzero) is dict:
+        if len(nonzero) != nd:
+            raise ValueError("The providing output_format list has different length with dataset_ids, cannot proceed")
+    else:
         nonzero = dict(zip(dataset_ids, [nonzero]*nd))
 
     dataset_paths = fetch_processed_quant(dataset_ids = dataset_ids,
@@ -162,6 +168,7 @@ def load_processed_quant(
                                         force = force,
                                         delete_tar = delete_tar,
                                         quiet = quiet)
+
     ann_list = {}
     for dataset_id in dataset_ids:
         nonzero_ds = nonzero[dataset_id]
@@ -174,4 +181,3 @@ def load_processed_quant(
                                         quiet = quiet)
 
     return ann_list
-    
