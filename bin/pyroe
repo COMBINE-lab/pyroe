@@ -1,10 +1,12 @@
 #!/usr/bin/env python
 
 from pyroe import make_splici_txome
+from pyroe import fetch_processed_quant
 
 if __name__ == "__main__":
     import argparse
     import sys
+    from argparse import RawTextHelpFormatter
 
     # Create the parser
     parser = argparse.ArgumentParser(description='The pyroe package provides useful functions for preparing input files required by alevin-fry.',
@@ -26,22 +28,41 @@ if __name__ == "__main__":
     parser_makeSplici.add_argument('--dedup-seqs', action='store_true', help='A flag indicates whether identical sequences will be deduplicated.')
     parser_makeSplici.add_argument('--no-flanking-merge', action='store_true', help='A flag indicates whether flank lengths will be considered when merging introns.')
 
+    # parse available datasets
+    available_datasets = fetch_processed_quant()
+    epilog = "\n".join(["".join([f"{idx+1}", ". ", dataset_name]) for (idx, dataset_name) in zip(range(available_datasets.shape[0]), available_datasets["dataset_name"].tolist())])
+    
+    parser_fetchQuant = subparsers.add_parser('fetch-quant', help='Fetch processed quant results', epilog=epilog, formatter_class=RawTextHelpFormatter)
+    parser_fetchQuant.add_argument('dataset_ids', metavar='dataset-ids', nargs='+', type=int, help='The ids of the datasets to fetch')
+    parser_fetchQuant.add_argument('--fetch_dir', type=str, default="processed_quant",  help='The path to a directory for storing fetched datasets.')
+    parser_fetchQuant.add_argument('--force', action='store_false', help='A flag indicates whether existing datasets will be redownloaded by force.')
+    parser_fetchQuant.add_argument('--delete_tar', action='store_true', help='A flag indicates whether fetched tar files will be deleted.')
+    parser_fetchQuant.add_argument('--quiet', action='store_true', help='A flag indicates whether help messaged should not be printed.')
+
     # Execute the parse_args() method
     args = parser.parse_args()
-    if args.command != 'make-splici':
+    if args.command == 'make-splici':
+        make_splici_txome(
+        genome_path=args.genome_path,
+        gtf_path=args.gtf_path,
+        read_length=args.read_length,
+        output_dir=args.output_dir,
+        flank_trim_length=args.flank_trim_length,
+        filename_prefix=args.filename_prefix,
+        extra_spliced=args.extra_spliced,
+        extra_unspliced=args.extra_unspliced,
+        dedup_seqs=args.dedup_seqs,
+        no_bt=args.no_bt,
+        bt_path=args.bt_path,
+        no_flanking_merge=args.no_flanking_merge)
+    elif args.command == 'fetch-quant':
+        fetch_processed_quant(
+            dataset_ids=args.dataset_ids,
+            fetch_dir=args.fetch_dir,
+            force=args.force,
+            delete_tar=args.delete_tar,
+            quiet=args.quiet
+        )
+    else:
         print(parser.print_help())
         sys.exit(1)
- 
-    make_splici_txome.make_splici_txome(
-    genome_path=args.genome_path,
-    gtf_path=args.gtf_path,
-    read_length=args.read_length,
-    output_dir=args.output_dir,
-    flank_trim_length=args.flank_trim_length,
-    filename_prefix=args.filename_prefix,
-    extra_spliced=args.extra_spliced,
-    extra_unspliced=args.extra_unspliced,
-    dedup_seqs=args.dedup_seqs,
-    no_bt=args.no_bt,
-    bt_path=args.bt_path,
-    no_flanking_merge=args.no_flanking_merge)
