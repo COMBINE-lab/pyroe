@@ -17,7 +17,7 @@ def fetch_processed_quant(
 
     Optional Parameters
     ----------
-    fetch_dir : `str` (default: `10x_datasets`)
+    fetch_dir : `str` (default: `processed_quant`)
         The path to a directory for storing fetched datasets.
     
     force : `bool` (default: `False`)
@@ -28,7 +28,7 @@ def fetch_processed_quant(
         If False, they will be stored in the datasets_tar
         folder under the fetch_dir.
         
-    quiet : `bool` (default: `True`)
+    quiet : `bool` (default: `False`)
         True if function should be quiet.
         False if messages (including error messages) should be printed out. 
 
@@ -36,8 +36,11 @@ def fetch_processed_quant(
     -------
     If an empty dataset_ids list is given, a dataframe 
     containing the information of all available datasets
-    will be returned. If one or more dataset ids are provided as dataset_ids, 
-    a dictionary of str paths will be returned.   
+    will be returned. If one or more dataset ids are 
+    provided as dataset_ids, a dictionary of str paths 
+    will be returned, in which the keys are the dataset ids,
+    and the values are the path to the folder of the 
+    corresponding quantification result.
 
     Notes
     -----
@@ -48,7 +51,7 @@ def fetch_processed_quant(
     using a nextflow-based 
     [alevin-fry workflow](https://github.com/COMBINE-lab/10x-requant) 
     and made the quantification results available for free downloading. 
-    Currently, the available datasets include (Notice that dataset id starts form **1**, not zero):
+    Currently, the available datasets include (Notice that dataset id starts form one, not zero):
     
     1. [500 Human PBMCs, 3' LT v3.1, Chromium Controller](https://www.10xgenomics.com/resources/datasets/500-human-pbm-cs-3-lt-v-3-1-chromium-controller-3-1-low-6-1-0): [link to the quant result](https://umd.box.com/shared/static/tg919re5gd4klua39z3zemcg9ya422am.tar)
     1. [500 Human PBMCs, 3' LT v3.1, Chromium X](https://www.10xgenomics.com/resources/datasets/500-human-pbm-cs-3-lt-v-3-1-chromium-x-3-1-low-6-1-0): [link to the quant result](https://umd.box.com/shared/static/lrl68q2lz0ltsvs89iazbr302p50wnqj.tar)
@@ -87,7 +90,7 @@ def fetch_processed_quant(
     1. [1k Heart Cells from an E18 mouse (v2 chemistry)](https://www.10xgenomics.com/resources/datasets/1-k-heart-cells-from-an-e-18-mouse-v-2-chemistry-3-standard-3-0-0): [link to the quant result](https://umd.box.com/shared/static/p4ieuzimfgrjfsr9rzhrn48kved4ha7m.tar)
 
     To obtain the information of the available datasets as 
-    a dataframe, one can run `preprocessed_10x_data()`
+    a dataframe, one can run `load_processed_quant()`
     """
     
     import pandas as pd

@@ -22,7 +22,7 @@ def load_processed_quant(
 
     Optional Parameters
     ----------
-    fetch_dir : `str` (default: `10x_datasets`)
+    fetch_dir : `str` (default: `processed_quant`)
         The path to a directory for storing downloaded datasets.
 
     force : `bool` (default: `False`)
@@ -39,7 +39,7 @@ def load_processed_quant(
         that will be used for loading all fetched datasets, \\
         or a `dict` represent a customized format that will
         be used for loading all fetched datasets,\\
-        or a `dict` of `str` or `dict` which keys are the dataset
+        or a `dict` of `str` or `dict` in which keys are the dataset
         ids to be fetched and values are the output_format that will 
         be used for loading each fetched dataset. 
         See [load_fry](https://github.com/COMBINE-lab/pyroe/blob/main/src/pyroe/load_fry.py) 
@@ -61,11 +61,10 @@ def load_processed_quant(
     -------
     If an empty dataset_ids list is given, a data frame 
     containing the information of all available datasets
-    will be returned. If an dataset id is provided as dataset_ids, 
-    a str represents path to the downloaded dataset will be 
-    returned. If a list of dataset ids is provided as dataset_ids, 
-    a dictionary of AnnData objects will be returned. The keys
-    are the dataset ids, the values are the corresponding AnnData objects.
+    will be returned. If one or more dataset ids are passed to dataset_ids, 
+    a dictionary of AnnData objects will be returned, in which the keys
+    are the dataset ids, and the values are the 
+    quantification result of the corresponding dataset.
 
     Notes
     -----
@@ -115,7 +114,7 @@ def load_processed_quant(
     1. [1k Heart Cells from an E18 mouse (v2 chemistry)](https://www.10xgenomics.com/resources/datasets/1-k-heart-cells-from-an-e-18-mouse-v-2-chemistry-3-standard-3-0-0): [link to the quant result](https://umd.box.com/shared/static/p4ieuzimfgrjfsr9rzhrn48kved4ha7m.tar)
 
     To obtain the information of the available datasets as 
-    a dataframe, one can run `preprocessed_10x_data()`
+    a dataframe, one can run `load_processed_quant()`
     """
     
     import pandas as pd
