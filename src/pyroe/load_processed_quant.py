@@ -1,7 +1,8 @@
-from .pyroe_utils import say
+from .pyroe_utils import say, check_dataset_ids
 from .fetch_processed_quant import fetch_processed_quant
 from .load_fry import load_fry
-
+from .ProcessedQuant import ProcessedQuant
+import os
 
 def load_processed_quant(
     dataset_ids = [],
@@ -30,7 +31,7 @@ def load_processed_quant(
         
     delete_tar : `bool` (default: `True`)
         True if intermediate tar files should be deleted.
-        If False, they will be stored in the datasets_tar
+        If False, they will be stored in the quant_tar
         folder under the fetch_dir.
     
     output_format : `str` or `dict`
@@ -59,12 +60,11 @@ def load_processed_quant(
 
     Returns
     -------
-    If an empty dataset_ids list is given, a data frame 
+    If an empty dataset_ids list is given, a dataframe 
     containing the information of all available datasets
-    will be returned. If one or more dataset ids are passed to dataset_ids, 
-    a dictionary of AnnData objects will be returned, in which the keys
-    are the dataset ids, and the values are the 
-    quantification result of the corresponding dataset.
+    will be returned. If one or more dataset ids are 
+    provided as dataset_ids, a dictionary of ProcessedQuant
+    instances will be returned. Each represents a fetched dataset.
 
     Notes
     -----
@@ -117,23 +117,21 @@ def load_processed_quant(
     a dataframe, one can run `load_processed_quant()`
     """
     
-    import pandas as pd
-    import os
-    import shutil
-    import urllib.request 
-    import tarfile
-
     say(quiet, "Processing parameters")
     # load available dataset sheet
-    location = os.path.dirname(os.path.realpath(__file__))
-    my_file = os.path.join(location, 'data', 'available_datasets.tsv')
-    # # my_file = os.path.join('data', 'available_datasets.tsv')
-    available_datasets = pd.read_csv(my_file, sep="\t")
+    available_datasets = ProcessedQuant.get_available_dataset_df()
 
     nd = len(dataset_ids)
     # if no dataset is provided, just return the available dataset dataframe
     if nd == 0:
         return available_datasets
+
+    n_ds = available_datasets.shape[0]
+    dataset_ids = check_dataset_ids(n_ds, dataset_ids)
+
+    # if no id left, return an error
+    if not dataset_ids:
+        raise ValueError(f"No valid dataset id found, can not proceed")
 
     # check whether output_format are valid
     # we just check the length, the validity of
@@ -162,21 +160,21 @@ def load_processed_quant(
     else:
         nonzero = dict(zip(dataset_ids, [nonzero]*nd))
 
-    dataset_paths = fetch_processed_quant(dataset_ids = dataset_ids,
-                                        fetch_dir = fetch_dir,
-                                        force = force,
-                                        delete_tar = delete_tar,
-                                        quiet = quiet)
+    tar_dir = os.path.join(fetch_dir, "quant_tar")
+    if not os.path.exists(tar_dir):
+        os.makedirs(tar_dir)
 
-    ann_list = {}
+    pq_list = {}
     for dataset_id in dataset_ids:
-        nonzero_ds = nonzero[dataset_id]
-        output_format_ds = output_format[dataset_id]
-        dataset_path_ds = dataset_paths[dataset_id]
-        say(quiet, f"Loading dataset {dataset_id}")
-        ann_list[dataset_id] = load_fry(frydir = dataset_path_ds,
-                                        output_format = output_format_ds,
-                                        nonzero = nonzero_ds,
-                                        quiet = quiet)
+            nonzero_ds = nonzero[dataset_id]
+            output_format_ds = output_format[dataset_id]
+            say(quiet, f"Loading dataset {dataset_id}")
+            pq_list[dataset_id] = ProcessedQuant.FDL(dataset_id,
+                                                        tar_dir=tar_dir,
+                                                        quant_dir=fetch_dir,
+                                                        output_format=output_format_ds,
+                                                        nonzero=nonzero_ds,
+                                                        force=force, 
+                                                        quiet=quiet)
 
-    return ann_list
+    return pq_list

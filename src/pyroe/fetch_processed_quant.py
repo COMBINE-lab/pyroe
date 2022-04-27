@@ -1,4 +1,7 @@
-from .pyroe_utils import say
+from .pyroe_utils import say, check_dataset_ids
+from .ProcessedQuant import ProcessedQuant
+import os
+import shutil
 
 def fetch_processed_quant(
     dataset_ids = [],
@@ -8,7 +11,13 @@ def fetch_processed_quant(
     quiet = False
 ):
     """
-    Download the quantification result of the preprocessed 10x datasets.
+    This is a thin wrapper of the ProcessedQuant class.
+    This function can fetch and decompress multiple datasets 
+    specified in the `dataset_ids` list and returns a 
+    ProcessedQuant object for each fetched dataset.
+    If a empty list is passed as the dataset_ids,
+    a dataframe contains the information of 
+    all available datasets will be returned.
 
     Required Parameters
     ----------
@@ -37,10 +46,8 @@ def fetch_processed_quant(
     If an empty dataset_ids list is given, a dataframe 
     containing the information of all available datasets
     will be returned. If one or more dataset ids are 
-    provided as dataset_ids, a dictionary of str paths 
-    will be returned, in which the keys are the dataset ids,
-    and the values are the path to the folder of the 
-    corresponding quantification result.
+    provided as dataset_ids, a dictionary of ProcessedQuant
+    instances will be returned. Each represents a fetched dataset.
 
     Notes
     -----
@@ -92,82 +99,43 @@ def fetch_processed_quant(
     To obtain the information of the available datasets as 
     a dataframe, one can run `load_processed_quant()`
     """
-    
-    import pandas as pd
-    import os
-    import shutil
-    import urllib.request 
-    import tarfile
-
-    # load available dataset sheet
-    location = os.path.dirname(os.path.realpath(__file__))
-    my_file = os.path.join(location, 'data', 'available_datasets.tsv')
-    # # my_file = os.path.join('data', 'available_datasets.tsv')
-    available_datasets = pd.read_csv(my_file, sep="\t")
-
+    available_datasets = ProcessedQuant.get_available_dataset_df()
     # if no dataset is provided, just return the available dataset dataframe
     if len(dataset_ids) == 0:
         return available_datasets
 
+    say(quiet, "Checking provided dataset ids")
+
     # check the validity of dataset_ids
     n_ds = available_datasets.shape[0]
-    invalid_ids = []
-    for idx, dataset_id in enumerate(dataset_ids):
-        if (type(dataset_id) == int):
-            if dataset_id > n_ds & dataset_id < 1:
-                print(f"Found invalid dataset id '{dataset_id}', ignored.")
-                invalid_ids.append(idx)
-        else:
-            print(f"Found invalid dataset id '{dataset_id}', ignored.")
-            invalid_ids.append(idx)
-    for i in reversed(invalid_ids):
-        del dataset_ids[i]
+    dataset_ids = check_dataset_ids(n_ds, dataset_ids)
 
     # if no id left, return an error
     if not dataset_ids:
         raise ValueError(f"No valid dataset id found, can not proceed")
 
     # download the quantification tar file for each queried dataset.
-    quant_dir_list = []
+    pq_list = {}
+
     # folder for (temporarily) storing tar files.
-    tar_dir = os.path.join(fetch_dir, "datasets_tar")
+    tar_dir = os.path.join(fetch_dir, "quant_tar")
     if not os.path.exists(tar_dir):
         os.makedirs(tar_dir)
 
     # download the quantification tar file for each queried dataset.
     for dataset_id in dataset_ids:
-        say(quiet, f"Processing dataset #{dataset_id}")
-        quant_parent_dir = os.path.join(fetch_dir, 
-                                        f"{dataset_id}")
-        # python index is zero-based
-        dataset_id -= 1
-        tar_file = os.path.join(tar_dir,
-                            "".join([available_datasets.iloc[dataset_id,5], ".tar"]))
-
-        if os.path.exists(quant_parent_dir):
-            say(quiet, f"  - output dir exists:\n    {quant_parent_dir}")
-            
-            if force:
-                say(quiet, "  - force re-processing")
-                shutil.rmtree(quant_parent_dir)
-            else:
-                say(quiet, "  - use the existing quant result")
-                quant_dir_list.append(os.path.join(quant_parent_dir, next(os.walk(quant_parent_dir))[1][0]))
-                continue
-
-        say(quiet, "  - Downloading quant result")
-        url = available_datasets.iloc[dataset_id, 9]
-        urllib.request.urlretrieve(url, tar_file)
-        # decompress the downloaded tar files
-        say(quiet, "  - Decompressing quant result")
-        tf = tarfile.open(tar_file)
-        tf.extractall(quant_parent_dir)
-        quant_dir_list.append(os.path.join(quant_parent_dir, next(os.walk(quant_parent_dir))[1][0]))
+        processed_quant = ProcessedQuant(dataset_id)
+        processed_quant.fetch_tar(tar_dir=tar_dir,force=force, quiet=quiet)
+        processed_quant.decompress_tar(quant_dir=fetch_dir, force=force, quiet=quiet)
+        
+        if delete_tar:
+            processed_quant.tar_path = None
+        pq_list[dataset_id] = processed_quant
 
     # delete tar if needed
     if delete_tar:
         say(quiet, "Removing downloaded tar files")
-    shutil.rmtree(tar_dir)
+        shutil.rmtree(tar_dir)
 
     say(quiet, "Done")
-    return dict(zip(dataset_ids, quant_dir_list))
+    return pq_list
