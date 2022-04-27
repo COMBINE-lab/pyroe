@@ -7,7 +7,7 @@
 The `pyroe` package provides useful functions for analyzing single-cell or single-nucleus RNA-sequencing data using `alevin-fry`, which consists of
 
 1. preparing the *splici* reference for the `USA` mode of `alevin-fry`, which will export a unspliced, a spliced, and an ambiguous molecule count for each gene within each cell.
-2. processing the quantification result of `alevin-fry` into python as an [`AnnData`](https://anndata.readthedocs.io/en/latest/) object. 
+2. fetching and loading the preprocessed quantification results of `alevin-fry` into python as an [`AnnData`](https://anndata.readthedocs.io/en/latest/) object.
 
 ## Installation
 The `pyroe` package can be accessed from its [github repository](https://github.com/COMBINE-lab/pyroe), installed via [`pip`](https://pip.pypa.io/en/stable/). To install the `pyroe` package via `pip` use the command:
@@ -164,4 +164,65 @@ is an additional "unspliced" layer, whose counts are taken directly from the uns
 
 #### Returns
 An AnnData object with X and layers corresponding to the requested `output_format`.
-        
+
+## Fetching and loading preprocessed quantification results
+The raw data for many single-cell and single-nucleus RNA-seq experiments is publicly available.  However, certain datasets are used _again and again_, to demonstrate data processing in tutorials, as benchmark datasets for novel methods (e.g. for clustering, dimensionality reduction, cell type identification, etc.).  In particular, 10x Genomics hosts various publicly available datasets generated using their technology and processed via their Cell Ranger software [on their website for download](https://www.10xgenomics.com/resources/datasets).
+
+We have created a [Nextflow](https://www.nextflow.io)-based `alevin-fry` workflow that one can use to easily quantify single-cell RNA-sequencing data in a single workflow.  The pipeline can be found [here](https://github.com/COMBINE-lab/10x-requant).  To test out this initial pipeline, we have begun to reprocess the publicly-available datasets collected from the 10x website. We have focused the initial effort on standard single-cell and single-nucleus gene-expression data generated using the Chromium v2 and v3 chemistries, but hope to expand the pipeline to more complex protocols soon (e.g. feature barcoding experiments) and process those data as well.  We note that these more complex protocols can already be processed with `alevin-fry` (see the [alevin-fry tutorials](https://combine-lab.github.io/alevin-fry-tutorials/)), but these have just not yet been incorprated into the automated Nextflow-based workflow linked above.
+
+We provide two python functions, `fetch_processed_quant()`, which can fetch the processed quantification results and store them to a local folder, and `load_processed_quant()`, which can fetch the quantification results and load them into python as `AnnData` objects. We also provide a CLI for fetching quantification results.
+
+### Full usage
+
+```
+usage: pyroe fetch-quant [-h] [--fetch_dir FETCH_DIR] [--force] [--delete_tar]
+                         [--quiet]
+                         dataset-ids [dataset-ids ...]
+
+positional arguments:
+  dataset-ids           The ids of the datasets to fetch
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --fetch_dir FETCH_DIR
+                        The path to a directory for storing fetched datasets.
+  --force               A flag indicates whether existing datasets will be redownloaded by force.
+  --delete_tar          A flag indicates whether fetched tar files will be deleted.
+  --quiet               A flag indicates whether help messaged should not be printed.
+
+1. 500 Human PBMCs, 3' LT v3.1, Chromium Controller
+2. 500 Human PBMCs, 3' LT v3.1, Chromium X
+3. 1k PBMCs from a Healthy Donor (v3 chemistry)
+4. 10k PBMCs from a Healthy Donor (v3 chemistry)
+5. 10k Human PBMCs, 3' v3.1, Chromium X
+6. 10k Human PBMCs, 3' v3.1, Chromium Controller
+7. 10k Peripheral blood mononuclear cells (PBMCs) from a healthy donor, Single Indexed
+8. 10k Peripheral blood mononuclear cells (PBMCs) from a healthy donor, Dual Indexed
+9. 20k Human PBMCs, 3' HT v3.1, Chromium X
+10. PBMCs from EDTA-Treated Blood Collection Tubes Isolated via SepMate-Ficoll Gradient (3' v3.1 Chemistry)
+11. PBMCs from Heparin-Treated Blood Collection Tubes Isolated via SepMate-Ficoll Gradient (3' v3.1 Chemistry)
+12. PBMCs from ACD-A Treated Blood Collection Tubes Isolated via SepMate-Ficoll Gradient (3' v3.1 Chemistry)
+13. PBMCs from Citrate-Treated Blood Collection Tubes Isolated via SepMate-Ficoll Gradient (3' v3.1 Chemistry)
+14. PBMCs from Citrate-Treated Cell Preparation Tubes (3' v3.1 Chemistry)
+15. PBMCs from a Healthy Donor: Whole Transcriptome Analysis
+16. Whole Blood RBC Lysis for PBMCs and Neutrophils, Granulocytes, 3'
+17. Peripheral blood mononuclear cells (PBMCs) from a healthy donor - Manual (channel 5)
+18. Peripheral blood mononuclear cells (PBMCs) from a healthy donor - Manual (channel 1)
+19. Peripheral blood mononuclear cells (PBMCs) from a healthy donor - Chromium Connect (channel 5)
+20. Peripheral blood mononuclear cells (PBMCs) from a healthy donor - Chromium Connect (channel 1)
+21. Hodgkin's Lymphoma, Dissociated Tumor: Whole Transcriptome Analysis
+22. 200 Sorted Cells from Human Glioblastoma Multiforme, 3’ LT v3.1
+23. 750 Sorted Cells from Human Invasive Ductal Carcinoma, 3’ LT v3.1
+24. 2k Sorted Cells from Human Glioblastoma Multiforme, 3’ v3.1
+25. 7.5k Sorted Cells from Human Invasive Ductal Carcinoma, 3’ v3.1
+26. Human Glioblastoma Multiforme: 3’v3 Whole Transcriptome Analysis
+27. 1k Brain Cells from an E18 Mouse (v3 chemistry)
+28. 10k Brain Cells from an E18 Mouse (v3 chemistry)
+29. 1k Heart Cells from an E18 mouse (v3 chemistry)
+30. 10k Heart Cells from an E18 mouse (v3 chemistry)
+31. 10k Mouse E18 Combined Cortex, Hippocampus and Subventricular Zone Cells, Single Indexed
+32. 10k Mouse E18 Combined Cortex, Hippocampus and Subventricular Zone Cells, Dual Indexed
+33. 1k PBMCs from a Healthy Donor (v2 chemistry)
+34. 1k Brain Cells from an E18 Mouse (v2 chemistry)
+35. 1k Heart Cells from an E18 mouse (v2 chemistry)
+```

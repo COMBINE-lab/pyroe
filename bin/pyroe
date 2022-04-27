@@ -9,7 +9,7 @@ if __name__ == "__main__":
     from argparse import RawTextHelpFormatter
 
     # Create the parser
-    parser = argparse.ArgumentParser(description='The pyroe package provides useful functions for preparing input files required by alevin-fry.',
+    parser = argparse.ArgumentParser(description='The pyroe package provides useful functions to support alevin-fry ecosystem.',
                                         prog='pyroe')
     subparsers = parser.add_subparsers(title='subcommands', dest='command',
                                         description='valid subcommands',
@@ -31,6 +31,7 @@ if __name__ == "__main__":
     # parse available datasets
     available_datasets = fetch_processed_quant()
     epilog = "\n".join(["".join([f"{idx+1}", ". ", dataset_name]) for (idx, dataset_name) in zip(range(available_datasets.shape[0]), available_datasets["dataset_name"].tolist())])
+    epilog = "\n".join(["Index of the available datasets:", epilog])
     
     parser_fetchQuant = subparsers.add_parser('fetch-quant', help='Fetch processed quant results', epilog=epilog, formatter_class=RawTextHelpFormatter)
     parser_fetchQuant.add_argument('dataset_ids', metavar='dataset-ids', nargs='+', type=int, help='The ids of the datasets to fetch')
