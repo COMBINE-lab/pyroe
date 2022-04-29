@@ -33,11 +33,11 @@ if __name__ == "__main__":
     epilog = "\n".join(["".join([f"{idx+1}", ". ", dataset_name]) for (idx, dataset_name) in zip(range(available_datasets.shape[0]), available_datasets["dataset_name"].tolist())])
     epilog = "\n".join(["Index of the available datasets:", epilog])
     
-    parser_fetchQuant = subparsers.add_parser('fetch-quant', help='Fetch processed quant results', epilog=epilog, formatter_class=RawTextHelpFormatter)
+    parser_fetchQuant = subparsers.add_parser('fertch-quant', help='Fetch processed quant results', epilog=epilog, formatter_class=RawTextHelpFormatter)
     parser_fetchQuant.add_argument('dataset_ids', metavar='dataset-ids', nargs='+', type=int, help='The ids of the datasets to fetch')
-    parser_fetchQuant.add_argument('--fetch_dir', type=str, default="processed_quant",  help='The path to a directory for storing fetched datasets.')
+    parser_fetchQuant.add_argument('--fetch-dir', type=str, default="processed_quant",  help='The path to a directory for storing fetched datasets.')
     parser_fetchQuant.add_argument('--force', action='store_false', help='A flag indicates whether existing datasets will be redownloaded by force.')
-    parser_fetchQuant.add_argument('--delete_tar', action='store_true', help='A flag indicates whether fetched tar files will be deleted.')
+    parser_fetchQuant.add_argument('--delete-tar', action='store_true', help='A flag indicates whether fetched tar files will be deleted.')
     parser_fetchQuant.add_argument('--quiet', action='store_true', help='A flag indicates whether help messaged should not be printed.')
 
     # Execute the parse_args() method
