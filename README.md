@@ -175,7 +175,7 @@ We provide two python functions, `fetch_processed_quant()`, which can fetch the 
 ### Full usage
 
 ```
-usage: pyroe fetch-quant [-h] [--fetch_dir FETCH_DIR] [--force] [--delete_tar]
+usage: pyroe fetch-quant [-h] [--fetch_dir FETCH_DIR] [--force] [--keep_tar]
                          [--quiet]
                          dataset-ids [dataset-ids ...]
 
@@ -187,7 +187,7 @@ optional arguments:
   --fetch_dir FETCH_DIR
                         The path to a directory for storing fetched datasets.
   --force               A flag indicates whether existing datasets will be redownloaded by force.
-  --delete_tar          A flag indicates whether fetched tar files will be deleted.
+  --keep_tar          A flag indicates whether fetched tar files will be deleted.
   --quiet               A flag indicates whether help messaged should not be printed.
 
 1. 500 Human PBMCs, 3' LT v3.1, Chromium Controller
