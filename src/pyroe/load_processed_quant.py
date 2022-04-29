@@ -1,13 +1,14 @@
-from .pyroe_utils import say
+from .pyroe_utils import say, check_dataset_ids
 from .fetch_processed_quant import fetch_processed_quant
 from .load_fry import load_fry
-
-
+from .ProcessedQuant import ProcessedQuant
+import os
+import shutil
 def load_processed_quant(
     dataset_ids = [],
     fetch_dir = "processed_quant",
     force = False,
-    delete_tar = True,
+    keep_tar = False,
     output_format="scRNA",
     nonzero = False,
     quiet = False
@@ -28,10 +29,10 @@ def load_processed_quant(
     force : `bool` (default: `False`)
         True if existing datasets should be re-downloaded.
         
-    delete_tar : `bool` (default: `True`)
-        True if intermediate tar files should be deleted.
-        If False, they will be stored in the datasets_tar
-        folder under the fetch_dir.
+    keep_tar : `bool` (default: `False`)
+        False if intermediate tar files should be deleted.
+        If True, they will be stored in the quant_tar
+        directory under the fetch_dir directory.
     
     output_format : `str` or `dict`
         Either a str represents one of the pre-defined output 
@@ -59,12 +60,11 @@ def load_processed_quant(
 
     Returns
     -------
-    If an empty dataset_ids list is given, a data frame 
+    If an empty dataset_ids list is given, a dataframe 
     containing the information of all available datasets
-    will be returned. If one or more dataset ids are passed to dataset_ids, 
-    a dictionary of AnnData objects will be returned, in which the keys
-    are the dataset ids, and the values are the 
-    quantification result of the corresponding dataset.
+    will be returned. If one or more dataset ids are 
+    provided as dataset_ids, a dictionary of ProcessedQuant
+    instances will be returned. Each represents a fetched dataset.
 
     Notes
     -----
@@ -98,11 +98,11 @@ def load_processed_quant(
     1. [Peripheral blood mononuclear cells (PBMCs) from a healthy donor - Chromium Connect (channel 5)](https://www.10xgenomics.com/resources/datasets/peripheral-blood-mononuclear-cells-pbm-cs-from-a-healthy-donor-chromium-connect-channel-5-3-1-standard-3-1-0): [link to the quant result](https://umd.box.com/shared/static/kybks0ncf609xhcwvhv7z743zrmvlg94.tar)
     1. [Peripheral blood mononuclear cells (PBMCs) from a healthy donor - Chromium Connect (channel 1)](https://www.10xgenomics.com/resources/datasets/peripheral-blood-mononuclear-cells-pbm-cs-from-a-healthy-donor-chromium-connect-channel-1-3-1-standard-3-1-0): [link to the quant result](https://umd.box.com/shared/static/vtuexhbqiyvfob7qdpvsxl1nbqlo074f.tar)
     1. [Hodgkin's Lymphoma, Dissociated Tumor: Whole Transcriptome Analysis](https://www.10xgenomics.com/resources/datasets/hodgkins-lymphoma-dissociated-tumor-whole-transcriptome-analysis-3-1-standard-4-0-0): [link to the quant result](https://umd.box.com/shared/static/qis4ovf34wvq12n2uabdiem6w355qry7.tar)
-    1. [200 Sorted Cells from Human Glioblastoma Multiforme, 3’ LT v3.1](https://www.10xgenomics.com/resources/datasets/200-sorted-cells-from-human-glioblastoma-multiforme-3-lt-v-3-1-3-1-low-6-0-0): [link to the quant result](https://umd.box.com/shared/static/2xf9xf8m1n5vbvmpo1vshwigs7f7o5jd.tar)
-    1. [750 Sorted Cells from Human Invasive Ductal Carcinoma, 3’ LT v3.1](https://www.10xgenomics.com/resources/datasets/750-sorted-cells-from-human-invasive-ductal-carcinoma-3-lt-v-3-1-3-1-low-6-0-0): [link to the quant result](https://umd.box.com/shared/static/3txnreehxoj2plyypfs6fkibnnbo72h4.tar)
-    1. [2k Sorted Cells from Human Glioblastoma Multiforme, 3’ v3.1](https://www.10xgenomics.com/resources/datasets/2-k-sorted-cells-from-human-glioblastoma-multiforme-3-v-3-1-3-1-standard-6-0-0): [link to the quant result](https://umd.box.com/shared/static/n0vpgbdwbnnqdw1h9of2ykk7ive9p6pt.tar)
-    1. [7.5k Sorted Cells from Human Invasive Ductal Carcinoma, 3’ v3.1](https://www.10xgenomics.com/resources/datasets/7-5-k-sorted-cells-from-human-invasive-ductal-carcinoma-3-v-3-1-3-1-standard-6-0-0): [link to the quant result](https://umd.box.com/shared/static/aly78r6bppqf01npbqfopc3epmp17weu.tar)
-    1. [Human Glioblastoma Multiforme: 3’v3 Whole Transcriptome Analysis](https://www.10xgenomics.com/resources/datasets/human-glioblastoma-multiforme-3-v-3-whole-transcriptome-analysis-3-standard-4-0-0): [link to the quant result](https://umd.box.com/shared/static/suf8pt3avv4rchxfw0bqrshslzieygef.tar)
+    1. [200 Sorted Cells from Human Glioblastoma Multiforme, 3' LT v3.1](https://www.10xgenomics.com/resources/datasets/200-sorted-cells-from-human-glioblastoma-multiforme-3-lt-v-3-1-3-1-low-6-0-0): [link to the quant result](https://umd.box.com/shared/static/2xf9xf8m1n5vbvmpo1vshwigs7f7o5jd.tar)
+    1. [750 Sorted Cells from Human Invasive Ductal Carcinoma, 3' LT v3.1](https://www.10xgenomics.com/resources/datasets/750-sorted-cells-from-human-invasive-ductal-carcinoma-3-lt-v-3-1-3-1-low-6-0-0): [link to the quant result](https://umd.box.com/shared/static/3txnreehxoj2plyypfs6fkibnnbo72h4.tar)
+    1. [2k Sorted Cells from Human Glioblastoma Multiforme, 3' v3.1](https://www.10xgenomics.com/resources/datasets/2-k-sorted-cells-from-human-glioblastoma-multiforme-3-v-3-1-3-1-standard-6-0-0): [link to the quant result](https://umd.box.com/shared/static/n0vpgbdwbnnqdw1h9of2ykk7ive9p6pt.tar)
+    1. [7.5k Sorted Cells from Human Invasive Ductal Carcinoma, 3' v3.1](https://www.10xgenomics.com/resources/datasets/7-5-k-sorted-cells-from-human-invasive-ductal-carcinoma-3-v-3-1-3-1-standard-6-0-0): [link to the quant result](https://umd.box.com/shared/static/aly78r6bppqf01npbqfopc3epmp17weu.tar)
+    1. [Human Glioblastoma Multiforme: 3' v3 Whole Transcriptome Analysis](https://www.10xgenomics.com/resources/datasets/human-glioblastoma-multiforme-3-v-3-whole-transcriptome-analysis-3-standard-4-0-0): [link to the quant result](https://umd.box.com/shared/static/suf8pt3avv4rchxfw0bqrshslzieygef.tar)
     1. [1k Brain Cells from an E18 Mouse (v3 chemistry)](https://www.10xgenomics.com/resources/datasets/1-k-brain-cells-from-an-e-18-mouse-v-3-chemistry-3-standard-3-0-0): [link to the quant result](https://umd.box.com/shared/static/4w5eiq3qafbru5ocler39j5j28bvgz98.tar)
     1. [10k Brain Cells from an E18 Mouse (v3 chemistry)](https://www.10xgenomics.com/resources/datasets/10-k-brain-cells-from-an-e-18-mouse-v-3-chemistry-3-standard-3-0-0): [link to the quant result](https://umd.box.com/shared/static/tym9m73frtp13vo15jhit9uwuk3mtfdq.tar)
     1. [1k Heart Cells from an E18 mouse (v3 chemistry)](https://www.10xgenomics.com/resources/datasets/1-k-heart-cells-from-an-e-18-mouse-v-3-chemistry-3-standard-3-0-0): [link to the quant result](https://umd.box.com/shared/static/d838oy3udjvtzjo7tsdiao7u6sazabeg.tar)
@@ -117,23 +117,21 @@ def load_processed_quant(
     a dataframe, one can run `load_processed_quant()`
     """
     
-    import pandas as pd
-    import os
-    import shutil
-    import urllib.request 
-    import tarfile
-
     say(quiet, "Processing parameters")
     # load available dataset sheet
-    location = os.path.dirname(os.path.realpath(__file__))
-    my_file = os.path.join(location, 'data', 'available_datasets.tsv')
-    # # my_file = os.path.join('data', 'available_datasets.tsv')
-    available_datasets = pd.read_csv(my_file, sep="\t")
+    available_datasets = ProcessedQuant.get_available_dataset_df()
 
     nd = len(dataset_ids)
     # if no dataset is provided, just return the available dataset dataframe
     if nd == 0:
         return available_datasets
+
+    n_ds = available_datasets.shape[0]
+    dataset_ids = check_dataset_ids(n_ds, dataset_ids)
+
+    # if no id left, return an error
+    if not dataset_ids:
+        raise ValueError(f"No valid dataset id found, can not proceed")
 
     # check whether output_format are valid
     # we just check the length, the validity of
@@ -162,21 +160,31 @@ def load_processed_quant(
     else:
         nonzero = dict(zip(dataset_ids, [nonzero]*nd))
 
-    dataset_paths = fetch_processed_quant(dataset_ids = dataset_ids,
-                                        fetch_dir = fetch_dir,
-                                        force = force,
-                                        delete_tar = delete_tar,
-                                        quiet = quiet)
+    tar_dir = os.path.join(fetch_dir, "quant_tar")
+    if not os.path.exists(tar_dir):
+        os.makedirs(tar_dir)
 
-    ann_list = {}
+    pq_list = {}
     for dataset_id in dataset_ids:
         nonzero_ds = nonzero[dataset_id]
         output_format_ds = output_format[dataset_id]
-        dataset_path_ds = dataset_paths[dataset_id]
-        say(quiet, f"Loading dataset {dataset_id}")
-        ann_list[dataset_id] = load_fry(frydir = dataset_path_ds,
-                                        output_format = output_format_ds,
-                                        nonzero = nonzero_ds,
-                                        quiet = quiet)
+        processed_quant = ProcessedQuant.FDL(dataset_id,
+                                                    tar_dir=tar_dir,
+                                                    quant_dir=fetch_dir,
+                                                    output_format=output_format_ds,
+                                                    nonzero=nonzero_ds,
+                                                    force=force, 
+                                                    quiet=quiet)
 
-    return ann_list
+        
+        if not keep_tar:
+            processed_quant.tar_path = None
+        pq_list[dataset_id] = processed_quant
+
+    # delete tar if needed
+    if not keep_tar:
+        say(quiet, "Removing downloaded tar files")
+        shutil.rmtree(tar_dir)
+
+    say(quiet, "Done")
+    return pq_list
