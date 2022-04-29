@@ -11,27 +11,17 @@ class ProcessedQuant:
     A class stores the information of the quantification
     result of a processed dataset
     """
-    def get_available_dataset_df(print=False):
+    def get_available_dataset_df():
         """
         get the dataframe in which each row contains 
         the information of an available dataset that 
         can be fetched.
-
-        Parameters:
-        ---------------------------
-        print: `bool` (default: `False`)
-            If `True`, print the index and name of the available datasets
         """
 
         # load available dataset sheet
         location = os.path.dirname(os.path.realpath(__file__))
         my_file = os.path.join(location, 'data', 'available_datasets.tsv')
         available_datasets = pd.read_csv(my_file, sep="\t")
-        
-        if print:
-            epilog = "\n".join(["".join([f"{idx+1}", ". ", dataset_name]) for (idx, dataset_name) in zip(range(available_datasets.shape[0]), available_datasets["dataset_name"].tolist())])
-            epilog = "\n".join(["Index of the available datasets:", epilog])
-            print(epilog)
 
         return available_datasets
 
@@ -45,9 +35,14 @@ class ProcessedQuant:
         print(epilog)
 
 
-    def __init__(self, dataset_id):
+    def __init__(self, dataset_id: int):
         available_datasets = ProcessedQuant.get_available_dataset_df()
-        # Instantiate
+        if dataset_id < 0 or dataset_id >= available_datasets.shape[0]:
+            raise ValueError("Invalid dataset_id, run",
+                            "ProcessedQuant.print_available_datasets()",
+                            "to get available dataset ids.")
+
+        # get the info of the queried dataset id, python is zero based.
         available_dataset = available_datasets.iloc[dataset_id-1,:]
         self.dataset_id = dataset_id
         self.chemistry = available_dataset["chemistry"]
@@ -86,20 +81,18 @@ class ProcessedQuant:
             If `True`, help messaged will be printed out.
         """
 
-        if not self.check_validity():
-            raise ValueError("Incomplete class object, use ProcessedQuant(dataset_id) to instantiate it")
+        self.check_validity()
 
         say(quiet, f"Fetching the quant result of dataset #{self.dataset_id}")
 
         # check whether tar file exist,
         # download it if needed
-        if (self.tar_path is not None) and \
-            os.path.exists(self.tar_path) and \
-            (not force):
-                    say(quiet, f"  - The tar_path field is not None and the path exists:")
-                    say(quiet, f"    {self.tar_path}")
-                    say(quiet, f"  - Pass force=True to fetch it again\n")
-                    return
+        if self.tar_path is not None:
+            if os.path.exists(self.tar_path) and (not force):
+                say(quiet, f"  - The tar_path attribute is not None and the path exists:")
+                say(quiet, f"    {self.tar_path}")
+                say(quiet, f"  - Pass force=True to fetch it again\n")
+                return
 
         # folder for (temporarily) storing tar files.
         if not os.path.exists(tar_dir):
@@ -113,6 +106,17 @@ class ProcessedQuant:
 
         # update tar_path
         tar_path = os.path.join(tar_dir, file_name)
+
+        if os.path.exists(tar_path):
+            if force:
+                say(quiet, f"  - Overwriting the existing tar file:")
+                say(quiet, f"    {tar_path}")
+        else:
+                say(quiet, f"  - Use the existing file as tar_path:")
+                say(quiet, f"    {tar_path}")
+                say(quiet, f"  - Pass force=True to overwrite it\n")
+                self.tar_path = tar_path
+                return
 
         # download tar file
         urllib.request.urlretrieve(self.quant_link, tar_path)
@@ -141,22 +145,21 @@ class ProcessedQuant:
             If `True`, help messaged will be printed out.
         """
         # make sure class is valid
-        if not self.check_validity():
-            raise ValueError("Incomplete class object, use ProcessedQuant(dataset_id) to instantiate it")
+        self.check_validity()
 
         # make sure tar file is valid
         if self.tar_path is None:
-            raise ValueError("tar_path field is None, run ProcessedQuant.fetch_tar() method to fetch the tar file.")
+            raise ValueError("tar_path attribute is None, run ProcessedQuant.fetch_tar() method to fetch the tar file.")
 
-        say(quiet, f"Decompressing the quant result of dataset #{self.dataset_id}")
+        say(quiet, f"Decompressing the quant result of dataset #{self.dataset_id} using:\n  {self.tar_path}")
 
-        # check quant_path and force
-        if (self.quant_path is not None) and \
-            os.path.exists(self.tar_path) and \
-            (not force):
-            say(quiet, f"  - The quant_path field is not None and the path exists:")
-            say(quiet, f"    {self.quant_path}")
-            say(quiet, f"  - pass force=True to decompress it again\n")
+        # if quant_path is not None, return unless force=TRUE
+        if self.quant_path is not None:
+            if os.path.exists(self.tar_path) and \
+                (not force):
+                say(quiet, f"  - The quant_path field is not None and the path exists:")
+                say(quiet, f"    {self.quant_path}")
+                say(quiet, f"  - pass force=True to decompress it again\n")
             return
         
         # check expected output dir 
@@ -202,8 +205,7 @@ class ProcessedQuant:
         quiet: `bool` (default: `False`)
             If `True`, help messaged will be printed out.
         """
-        if not self.check_validity():
-            raise ValueError("Incomplete class object, use ProcessedQuant(dataset_id) to instantiate it")
+        self.check_validity()
 
         # make sure quant dir is valid
         if self.quant_path is None:
@@ -291,5 +293,7 @@ class ProcessedQuant:
             self.feature_barcode is None or \
             self.library_csv is None or \
             self.quant_link is None:
-            return False
-        return True
+            raise ValueError("Incomplete class object, use",
+                            "ProcessedQuant(dataset_id)",
+                            "to instantiate it.")
+
