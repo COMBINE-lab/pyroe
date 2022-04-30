@@ -170,7 +170,9 @@ The raw data for many single-cell and single-nucleus RNA-seq experiments is publ
 
 We have created a [Nextflow](https://www.nextflow.io)-based `alevin-fry` workflow that one can use to easily quantify single-cell RNA-sequencing data in a single workflow.  The pipeline can be found [here](https://github.com/COMBINE-lab/10x-requant).  To test out this initial pipeline, we have begun to reprocess the publicly-available datasets collected from the 10x website. We have focused the initial effort on standard single-cell and single-nucleus gene-expression data generated using the Chromium v2 and v3 chemistries, but hope to expand the pipeline to more complex protocols soon (e.g. feature barcoding experiments) and process those data as well.  We note that these more complex protocols can already be processed with `alevin-fry` (see the [alevin-fry tutorials](https://combine-lab.github.io/alevin-fry-tutorials/)), but these have just not yet been incorprated into the automated Nextflow-based workflow linked above.
 
-We provide two python functions, `fetch_processed_quant()`, which can fetch the processed quantification results and store them to a local folder, and `load_processed_quant()`, which can fetch the quantification results and load them into python as `AnnData` objects. We also provide a CLI for fetching quantification results.
+We provide two python functions:
+- `fetch_processed_quant()` can fetch the quantification result of one or more available datasets according to the provided `dataset_ids` vector, and store them to a local folder. 
+- `load_processed_quant()` can fetch the quantification result of one or more available dataset as `fetch_processed_quant()`, and load them into python as `AnnData` objects. We also provide a CLI for fetching quantification results.
 
 ### Full usage
 
@@ -226,3 +228,16 @@ optional arguments:
 34. 1k Brain Cells from an E18 Mouse (v2 chemistry)
 35. 1k Heart Cells from an E18 mouse (v2 chemistry)
 ```
+
+### The ProcessedQuant class
+
+To store the information of a dataset, we provide the `ProcessedQuant` class, which can be simply instantiated using a dataset id, for example, `ProcessedQuant(2)` will return an instance of the `ProcessedQuant` class containing the detail of dataset #2, 500 Human PBMCs, 3' LT v3.1, Chromium X. This class contains methods for fetching, decompressing and loading the quantification result of the corresponding dataset. After getting an instance of the class, i.e., running `pq = ProcessedQuant(dataset_id)`, one can run the following commands to fetch, decompress and/or load the quantification result of the dataset:
+
+- `pq.fetch_quant()` fetches the compressed quantification result of the corresponding dataset into a local directory and stores the path in its `tar_path` attribute.
+- `pq.decompress_quant()` decompresses the fetched quantification result into a local directory and stores the path in its `quant_path` attribute.
+- `pq.load_quant()` loads the decompressed quantification result into python as an `AnnData` object and stores the object in its `anndata` attribute.
+
+Besides, we have some helper function for printing and loading the information of the available datasets:
+
+- `ProcessedQuant.get_available_dataset_df()` returns the detail of available datasets as a pandas dataframe.
+- `ProcessedQuant.print_available_datasets()` prints the index and name of the available datasets.
