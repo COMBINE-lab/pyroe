@@ -36,7 +36,7 @@ def load_processed_quant(
     
     output_format : `str` or `dict`
         Either a str represents one of the pre-defined output 
-        formats, which are "scRNA", "snRNA" and "velocity", 
+        formats, which are "scRNA", "snRNA", "raw" and "velocity", 
         that will be used for loading all fetched datasets, \\
         or a `dict` represent a customized format that will
         be used for loading all fetched datasets,\\
@@ -64,7 +64,8 @@ def load_processed_quant(
     containing the information of all available datasets
     will be returned. If one or more dataset ids are 
     provided as dataset_ids, a dictionary of ProcessedQuant
-    instances will be returned. Each represents a fetched dataset.
+    instances will be returned. Each represents a fetched dataset,
+    and is named by the dataset id.
 
     Notes
     -----
@@ -75,7 +76,7 @@ def load_processed_quant(
     using a nextflow-based 
     [alevin-fry workflow](https://github.com/COMBINE-lab/10x-requant) 
     and made the quantification results available for free downloading. 
-    Currently, the available datasets include (Notice that dataset id starts form **1**, not zero):
+    Currently, the available datasets include (Notice that dataset id starts from **1**, not zero):
     
     1. [500 Human PBMCs, 3' LT v3.1, Chromium Controller](https://www.10xgenomics.com/resources/datasets/500-human-pbm-cs-3-lt-v-3-1-chromium-controller-3-1-low-6-1-0): [link to the quant result](https://umd.box.com/shared/static/tg919re5gd4klua39z3zemcg9ya422am.tar)
     1. [500 Human PBMCs, 3' LT v3.1, Chromium X](https://www.10xgenomics.com/resources/datasets/500-human-pbm-cs-3-lt-v-3-1-chromium-x-3-1-low-6-1-0): [link to the quant result](https://umd.box.com/shared/static/lrl68q2lz0ltsvs89iazbr302p50wnqj.tar)

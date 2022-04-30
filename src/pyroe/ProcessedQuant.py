@@ -62,8 +62,8 @@ class ProcessedQuant:
     def fetch_quant(self, tar_dir="quant_tar", file_name=None, force=False, quiet=False):
         """
         Fetch processed quantification to a local directory.\\
-        The path to the fetched tar file is sotred
-        as the `ProcessedQuant.tar_path`
+        The path to the fetched tar file will be sotred
+        as the `ProcessedQuant.tar_path` attribute.
 
         Parameters
         ----------
@@ -75,7 +75,7 @@ class ProcessedQuant:
             Default is the dataset id.
 
         force: `bool` (default: `False`)
-            If `True`, existing tar file will be overwrited.
+            If `True`, any existing tar file will be overwrited.
 
         quiet: `bool` (default: `False`)
             If `True`, help messaged will be printed out.
@@ -127,8 +127,8 @@ class ProcessedQuant:
     def decompress_quant(self, quant_dir="processed_quant", quant_path_name=None, force=False, quiet=False):
         """
         Decompress the fetched quantification to a local directory.\\
-        The path to the decompressed quantification result is sotred
-        as the `ProcessedQuant.quant_path`
+        The path to the decompressed quantification result will be sotred
+        as the `ProcessedQuant.quant_path` attribute.
         Parameters
         ----------
         quant_dir: `str` (default: `processed_quant`)
@@ -157,10 +157,10 @@ class ProcessedQuant:
         if self.quant_path is not None:
             if os.path.exists(self.tar_path) and \
                 (not force):
-                say(quiet, f"  - The quant_path field is not None and the path exists:")
+                say(quiet, f"  - The quant_path attribute is not None and the path exists:")
                 say(quiet, f"    {self.quant_path}")
                 say(quiet, f"  - pass force=True to decompress it again\n")
-            return
+                return
         
         # check expected output dir 
         if quant_path_name is None:
@@ -190,29 +190,29 @@ class ProcessedQuant:
 
     def load_quant(self, output_format="scRNA", force = False, nonzero = False, quiet = False):
         """
-        Load the quantification result as the `ProcessedQuant.anndata` field.\\
+        Load the quantification result as the `ProcessedQuant.anndata` attribute.\\
 
         Parameters
         ----------
         output_format: `str` or `dict` (default: `scRNA`)
             A string represents one of the pre-defined output formats, which are "scRNA", "snRNA" and "velocity". \\
-            If a customized format of the returned `AnnData` is needed, one can pass a Dictionary.\\
+            If a customized format of the returned `AnnData` is needed, one can pass a dictionary.\\
             See [load_fry](https://github.com/COMBINE-lab/pyroe/blob/main/src/pyroe/load_fry.py) for details.
 
         nonzero: `bool` (default: `False`)
-            If `True`, existing tar file will be overwrited.
+            If `True`, the genes that have zero expression across all cells will be removed.
 
         quiet: `bool` (default: `False`)
-            If `True`, help messaged will be printed out.
+            If `True`, help messaged will not be printed out.
         """
         self.check_validity()
 
         # make sure quant dir is valid
         if self.quant_path is None:
-            raise ValueError("quant_path field is None, run ProcessedQuant.fetch_quant() and then ProcessedQuant.decompress_quant() method to generate it.")
+            raise ValueError("The quant_path attribute is None, run ProcessedQuant.fetch_quant() and then ProcessedQuant.decompress_quant() to generate it.")
         
         if not os.path.exists(self.quant_path):
-            raise ValueError("quant_path field is invalid, run ProcessedQuant.fetch_quant() and then ProcessedQuant.decompress_quant() method to regenerate it.")
+            raise ValueError("The quant_path attribute is invalid, run ProcessedQuant.fetch_quant() and then ProcessedQuant.decompress_quant() to regenerate it.")
         
         if (self.anndata is not None) and (not force):
             say(quiet, f"  - The anndata attribute is not None.")
