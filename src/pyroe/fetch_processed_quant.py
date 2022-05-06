@@ -126,7 +126,7 @@ def fetch_processed_quant(
     for dataset_id in dataset_ids:
         processed_quant = ProcessedQuant(dataset_id)
         processed_quant.fetch_quant(tar_dir=tar_dir,force=force, quiet=quiet)
-        processed_quant.decompress_tar(quant_dir=fetch_dir, force=force, quiet=quiet)
+        processed_quant.decompress_quant(quant_dir=fetch_dir, force=force, quiet=quiet)
         
         if not keep_tar:
             processed_quant.tar_path = None

@@ -75,7 +75,7 @@ class ProcessedQuant:
             Default is the dataset id.
 
         force: `bool` (default: `False`)
-            If `True`, any existing tar file will be overwrited.
+            If `True`, any existing tar file will be overwritten.
 
         quiet: `bool` (default: `False`)
             If `True`, help messaged will be printed out.
@@ -114,7 +114,7 @@ class ProcessedQuant:
             else:
                     say(quiet, f"  - Use the existing file as tar_path:")
                     say(quiet, f"    {tar_path}")
-                    say(quiet, f"  - Pass force=True to overwrite it\n")
+                    say(quiet, f"  - Pass force=True to overwrite it")
                     self.tar_path = tar_path
                     return
 
@@ -139,7 +139,7 @@ class ProcessedQuant:
             Default is the dataset id.
 
         force: `bool` (default: `False`)
-            If `True`, existing tar file will be overwrited.
+            If `True`, existing tar file will be overwritten.
 
         quiet: `bool` (default: `False`)
             If `True`, help messaged will be printed out.
@@ -159,7 +159,7 @@ class ProcessedQuant:
                 (not force):
                 say(quiet, f"  - The quant_path attribute is not None and the path exists:")
                 say(quiet, f"    {self.quant_path}")
-                say(quiet, f"  - pass force=True to decompress it again\n")
+                say(quiet, f"  - pass force=True to decompress it again")
                 return
         
         # check expected output dir 
@@ -177,7 +177,7 @@ class ProcessedQuant:
             else:
                 say(quiet, f"  - Use the existing directory as quant_path:")
                 say(quiet, f"    {quant_parent_dir}")
-                say(quiet, f"  - pass force=True to overwrite it\n")
+                say(quiet, f"  - pass force=True to overwrite it")
                 self.quant_path = os.path.join(quant_parent_dir, 
                                         next(os.walk(quant_parent_dir))[1][0])
                 return
@@ -218,7 +218,7 @@ class ProcessedQuant:
         
         if (self.anndata is not None) and (not force):
             say(quiet, f"  - The anndata attribute is not None.")
-            say(quiet, f"  - pass force=True to update it\n")
+            say(quiet, f"  - pass force=True to update it")
             return
 
         say(quiet, f"Loading dataset #{self.dataset_id} from:")
@@ -266,10 +266,10 @@ class ProcessedQuant:
             See [load_fry](https://github.com/COMBINE-lab/pyroe/blob/main/src/pyroe/load_fry.py) for details.
 
         nonzero: `bool` (default: `False`)
-            If `True`, existing tar file will be overwrited.
+            If `True`, existing tar file will be overwritten.
 
         force: `bool` (default: `False`)
-            If `True`, existing tar file will be overwrited.
+            If `True`, existing tar file will be overwritten.
 
         quiet: `bool` (default: `False`)
             If `True`, help messaged will be printed out.
