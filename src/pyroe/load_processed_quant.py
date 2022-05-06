@@ -8,7 +8,7 @@ def load_processed_quant(
     dataset_ids = [],
     fetch_dir = "processed_quant",
     force = False,
-    keep_tar = False,
+    delete_tar = False,
     output_format="scRNA",
     nonzero = False,
     quiet = False
@@ -29,9 +29,9 @@ def load_processed_quant(
     force : `bool` (default: `False`)
         True if existing datasets should be re-downloaded.
         
-    keep_tar : `bool` (default: `False`)
-        False if intermediate tar files should be deleted.
-        If True, they will be stored in the quant_tar
+    delete_tar : `bool` (default: `False`)
+        True if intermediate tar files should be deleted.
+        If False, they will be stored in the quant_tar
         directory under the fetch_dir directory.
     
     output_format : `str` or `dict`
@@ -178,13 +178,13 @@ def load_processed_quant(
                                                     quiet=quiet)
 
         
-        if not keep_tar:
+        if delete_tar:
             processed_quant.tar_path = None
         pq_list[dataset_id] = processed_quant
         say(quiet, "\n")
 
     # delete tar if needed
-    if not keep_tar:
+    if delete_tar:
         say(quiet, "Removing downloaded tar files")
         shutil.rmtree(tar_dir)
 

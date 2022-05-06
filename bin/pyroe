@@ -37,7 +37,7 @@ if __name__ == "__main__":
     parser_fetchQuant.add_argument('dataset_ids', metavar='dataset-ids', nargs='+', type=int, help='The ids of the datasets to fetch')
     parser_fetchQuant.add_argument('--fetch-dir', type=str, default="processed_quant",  help='The path to a directory for storing fetched datasets.')
     parser_fetchQuant.add_argument('--force', action='store_true', help='A flag indicates whether existing datasets will be redownloaded by force.')
-    parser_fetchQuant.add_argument('--keep-tar', action='store_true', help='A flag indicates whether fetched tar files will be kept in the quant_tar directory under the fetch_dir directory.')
+    parser_fetchQuant.add_argument('--delete-tar', action='store_true', help='A flag indicates whether fetched tar files stored in the quant_tar directory under the provided fetch_dir should be deleted.')
     parser_fetchQuant.add_argument('--quiet', action='store_true', help='A flag indicates whether help messaged should not be printed.')
 
     # Execute the parse_args() method
@@ -61,7 +61,7 @@ if __name__ == "__main__":
             dataset_ids=args.dataset_ids,
             fetch_dir=args.fetch_dir,
             force=args.force,
-            keep_tar=args.keep_tar,
+            delete_tar=args.delete_tar,
             quiet=args.quiet
         )
     else:
