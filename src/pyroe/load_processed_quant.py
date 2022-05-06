@@ -181,6 +181,7 @@ def load_processed_quant(
         if not keep_tar:
             processed_quant.tar_path = None
         pq_list[dataset_id] = processed_quant
+        say(quiet, "\n")
 
     # delete tar if needed
     if not keep_tar:
