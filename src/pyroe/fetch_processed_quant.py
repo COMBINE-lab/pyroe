@@ -7,7 +7,7 @@ def fetch_processed_quant(
     dataset_ids = [],
     fetch_dir = "processed_quant",
     force = False,
-    keep_tar = False,
+    delete_tar = False,
     quiet = False
 ):
     """
@@ -32,9 +32,9 @@ def fetch_processed_quant(
     force : `bool` (default: `False`)
         True if existing datasets should be re-downloaded.
         
-    keep_tar : `bool` (default: `False`)
-        False if intermediate tar files should be deleted.
-        If True, they will be stored in the quant_tar
+    delete_tar : `bool` (default: `False`)
+        True if intermediate tar files should be deleted.
+        If False, they will be stored in the quant_tar
         directory under the fetch_dir directory.
     
     quiet : `bool` (default: `False`)
@@ -128,12 +128,12 @@ def fetch_processed_quant(
         processed_quant.fetch_quant(tar_dir=tar_dir,force=force, quiet=quiet)
         processed_quant.decompress_quant(quant_dir=fetch_dir, force=force, quiet=quiet)
         
-        if not keep_tar:
+        if delete_tar:
             processed_quant.tar_path = None
         pq_list[dataset_id] = processed_quant
 
     # delete tar if needed
-    if not keep_tar:
+    if delete_tar:
         say(quiet, "Removing downloaded tar files")
         shutil.rmtree(tar_dir)
 
