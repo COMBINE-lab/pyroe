@@ -188,8 +188,8 @@ import pyroe
 pq_dict = pyroe.load_processed_quant([1,3,6])
 
 # get the ProcessedQuant class object for dataset #1 and #3
-pq_ds1 = pq_dict["1"]
-pq_ds3 = pq_dict["3"]
+pq_ds1 = pq_dict[1]
+pq_ds3 = pq_dict[3]
 
 # get the dataset name
 pq_ds1.dataset_name
