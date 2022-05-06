@@ -175,9 +175,11 @@ class ProcessedQuant:
                 say(quiet, f"    {quant_parent_dir}")
                 shutil.rmtree(quant_parent_dir)
             else:
-                say(quiet, f"  - The quant result folder exists:")
+                say(quiet, f"  - Use the existing directory as quant_path:")
                 say(quiet, f"    {quant_parent_dir}")
                 say(quiet, f"  - pass force=True to overwrite it\n")
+                self.quant_path = os.path.join(quant_parent_dir, 
+                                        next(os.walk(quant_parent_dir))[1][0])
                 return
 
         # decompress the tar file
