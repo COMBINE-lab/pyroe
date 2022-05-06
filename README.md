@@ -174,6 +174,39 @@ We provide two python functions:
 - `fetch_processed_quant()` can fetch the quantification result of one or more available datasets according to the provided `dataset_ids` vector, and store them to a local folder. 
 - `load_processed_quant()` can fetch the quantification result of one or more available dataset as `fetch_processed_quant()`, and load them into python as `AnnData` objects. We also provide a CLI for fetching quantification results.
 
+
+```bash
+pyroe fetch-quant 1 3 6
+```
+
+or start python, and run
+
+```py
+import pyroe
+
+# fetch, decompress and load the quantification result of dastset #1, 3 and 6
+pq_dict = pyroe.load_processed_quant([1,3,6])
+
+# get the ProcessedQuant class object for dataset #1 and #3
+pq_ds1 = pq_dict["1"]
+pq_ds3 = pq_dict["3"]
+
+# get the dataset name
+pq_ds1.dataset_name
+pq_ds3.dataset_name
+
+
+# get the path to the quantification result
+pq_ds1.quant_path
+pq_ds3.quant_path
+
+# get the AnnData
+pq_ds1.anndata
+pq_da3.anndata
+
+```
+
+
 ### Full usage
 
 ```
