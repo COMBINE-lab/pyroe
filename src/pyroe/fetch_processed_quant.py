@@ -125,7 +125,7 @@ def fetch_processed_quant(
     # download the quantification tar file for each queried dataset.
     for dataset_id in dataset_ids:
         processed_quant = ProcessedQuant(dataset_id)
-        processed_quant.fetch_tar(tar_dir=tar_dir,force=force, quiet=quiet)
+        processed_quant.fetch_quant(tar_dir=tar_dir,force=force, quiet=quiet)
         processed_quant.decompress_tar(quant_dir=fetch_dir, force=force, quiet=quiet)
         
         if not keep_tar:
