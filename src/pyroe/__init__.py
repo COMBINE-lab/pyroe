@@ -1,4 +1,4 @@
-__version__ = "0.2.0"
+__version__ = "0.3.1"
 
 from pyroe.load_fry import load_fry
 from pyroe.make_splici_txome import make_splici_txome
