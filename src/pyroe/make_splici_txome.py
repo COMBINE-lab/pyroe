@@ -1,3 +1,26 @@
+def append_extra(extra_infile, out_fa, out_t2g3col, col_status):
+    """
+    extra_infile : str
+        path to the extra FASTA format input file from which to read the extra records
+    out_fa : str
+        path to the output FASTA file being created (will be *appended* to)
+    out_t2g3col : str
+        path to the output t2g 3-column file (will be *appended* to)
+    col_status : char
+        splicing status to use for these records (one of 'S' or 'U')
+    """
+    from Bio import SeqIO
+    from Bio.SeqIO.FastaIO import SimpleFastaParser
+
+    ## write extra sequences to the t2g file
+    with open(extra_infile) as extra_in_fa:
+        with open(out_fa, "a") as splici_fa:
+            with open(out_t2g3col, "a") as t2g:
+                for title, sequence in SimpleFastaParser(extra_in_fa):
+                    tid = title.split()[0]
+                    splici_fa.write(f"\n>{tid}")
+                    splici_fa.write(f"\n{sequence}")
+                    t2g.write(f"\n{tid}\t{tid}\t{col_status}")
 
 def make_splici_txome(
     genome_path,
@@ -337,33 +360,8 @@ def make_splici_txome(
 
     # append extra spliced transcript onto splici
     if extra_spliced is not None:
-        ## trim outbounded introns
-        with open(extra_spliced) as extra_spliced_fa:
-            with open(out_fa, "a") as splici_fa:
-                with open(out_t2g3col, "a") as t2g:
-                    for title, sequence in SimpleFastaParser(extra_spliced_fa):
-                        tid = title.split()[0]
-                        # splici_fa.writelines("\n")
-                        splici_fa.write("\n>"+tid)
-                        splici_fa.write("\n"+sequence)
-                        t2g.write("\n"+tid+"\t"+tid)
+        append_extra(extra_spliced, out_fa, out_t2g3col, 'S')
                         
     # append extra unspliced transcript onto splici
     if extra_unspliced is not None:
-        ## trim outbounded introns
-        with open(extra_unspliced) as extra_unspliced_fa:
-            with open("test_splici_fl145.fa", "a") as splici_fa:
-                with open("test_splici_t2g.tsv", "a") as t2g:
-                    for title, sequence in SimpleFastaParser(extra_unspliced_fa):
-                        tid = title.split()[0]
-                        # splici_fa.writelines("\n")
-                        splici_fa.write("\n>"+tid+"-I")
-                        splici_fa.write("\n"+sequence)
-                        t2g.write("\n"+tid+"-I\t"+tid)
-                    
-
-                
-            
-
-
-
+        append_extra(extra_spliced, out_fa, out_t2g3col, 'U')
