@@ -18,9 +18,9 @@ def append_extra(extra_infile, out_fa, out_t2g3col, col_status):
             with open(out_t2g3col, "a") as t2g:
                 for title, sequence in SimpleFastaParser(extra_in_fa):
                     tid = title.split()[0]
-                    splici_fa.write(f"\n>{tid}")
-                    splici_fa.write(f"\n{sequence}")
-                    t2g.write(f"\n{tid}\t{tid}\t{col_status}")
+                    splici_fa.write(f">{tid}\n")
+                    splici_fa.write(f"{sequence}\n")
+                    t2g.write(f"{tid}\t{tid}\t{col_status}\n")
 
 def make_splici_txome(
     genome_path,
@@ -364,4 +364,4 @@ def make_splici_txome(
                         
     # append extra unspliced transcript onto splici
     if extra_unspliced is not None:
-        append_extra(extra_spliced, out_fa, out_t2g3col, 'U')
+        append_extra(extra_unspliced, out_fa, out_t2g3col, 'U')
