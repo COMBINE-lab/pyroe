@@ -63,8 +63,9 @@ def dedup_sequences(output_dir, in_fa, out_fa):
     dup_file_name = os.path.sep.join([output_dir, "duplicate_entries.tsv"])
     with open(dup_file_name, 'w') as dup_file:
         dup_file.write("RetainedRef\tDuplicateRef\n")
-        for k, v in record_representatives.items():
-            if len(v) > 1:
+        for k, vu in record_representatives.items():
+            if len(vu) > 1:
+                v = sorted(vu)
                 for dup in v[1:]:
                     dup_file.write(f"{v[0]}\t{dup}\n")
     
@@ -72,7 +73,8 @@ def dedup_sequences(output_dir, in_fa, out_fa):
     ## Note: it might be that out_file == in_file and we 
     ## are overwriting the input.
     with open(out_fa, 'w') as ofile:
-        for k, v in record_representatives.items():
+        for k, vu in record_representatives.items():
+            v = sorted(vu)
             rec = SeqRecord(Seq(k), id=v[0], description="")
             SeqIO.write(rec, ofile, "fasta")
 
