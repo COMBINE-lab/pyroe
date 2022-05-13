@@ -428,4 +428,4 @@ def make_splici_txome(
         # the input and output file name parameters because
         # we want to overwirte the duplicate fasta with 
         # the deduplicated fasta.
-        dedup_sequences(output_dir, out_fa, out_fa):
+        dedup_sequences(output_dir, out_fa, out_fa)
