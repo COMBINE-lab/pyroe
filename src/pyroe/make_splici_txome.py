@@ -22,6 +22,46 @@ def append_extra(extra_infile, out_fa, out_t2g3col, col_status):
                     splici_fa.write(f"{sequence}\n")
                     t2g.write(f"{tid}\t{tid}\t{col_status}\n")
 
+def dedup_sequences(output_dir, in_fa, out_fa):
+    import os
+    from Bio import SeqIO
+    from Bio.Seq import Seq
+    from Bio.SeqRecord import SeqRecord
+    from Bio.SeqIO.FastaIO import SimpleFastaParser
+    
+    record_representatives = {}
+
+    ## read from the input fasta file and track 
+    ## the duplicate sequences
+    for record in SeqIO.parse(in_fa, "fasta"):  
+        seq = str(record.seq)
+        name = record.id.split()[0]
+        # if we haven't seen it yet, this is the representative
+        # otherwise append the name of the duplicate
+        if seq in record_representatives:
+            record_representatives[seq].append(name)
+        else:
+            record_representatives[seq] = [name]
+
+    ## write out the duplicate entries in the same format 
+    ## the salmon / pufferfish indexer uses
+    dup_file_name = os.path.sep.join([output_dir, "duplicate_entries.txt"])
+    with open(dup_file_name, 'w') as dup_file:
+        dup_file.write("RetainedRef\tDuplicateRef\n")
+        for k, v in record_representatives.items():
+            if len(v) > 1:
+                for dup in v[1:]:
+                    dup_file.write(f"{v[0]}\t{dup}\n")
+    
+    ## write the deduplicated output to file
+    ## Note: it might be that out_file == in_file and we 
+    ## are overwriting the input.
+    with open(out_fa, 'w') as ofile:
+        for k, v in record_representatives.items():
+            rec = SeqRecord(Seq(k), id=v[0], description="")
+            SeqIO.write(rec, ofile, "fasta")
+
+
 def make_splici_txome(
     genome_path,
     gtf_path,
@@ -365,3 +405,10 @@ def make_splici_txome(
     # append extra unspliced transcript onto splici
     if extra_unspliced is not None:
         append_extra(extra_unspliced, out_fa, out_t2g3col, 'U')
+
+    if dedup_seqs:
+        # Note: out_fa is intentionally passed as both 
+        # the input and output file name parameters because
+        # we want to overwirte the duplicate fasta with 
+        # the deduplicated fasta.
+        dedup_sequences(output_dir, out_fa, out_fa):
