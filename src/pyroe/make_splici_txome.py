@@ -23,6 +23,21 @@ def append_extra(extra_infile, out_fa, out_t2g3col, col_status):
                     t2g.write(f"{tid}\t{tid}\t{col_status}\n")
 
 def dedup_sequences(output_dir, in_fa, out_fa):
+    """
+    This function deduplicates the fasta sequences in `in_fa`, writes the 
+    deduplicated sequences in fasta format to `out_fa`, and also produces a 
+    2-column tsv file in `ouput_dir`/duplicate_entries.tsv recording the 
+    entries that have been removed and the retained entry that they match.
+    Note: It is allowed (and in some cases intended) that `in_fa` == `out_fa`.
+    In this case, the input fasta file will be overwritten.
+
+    output_dir : str
+        The output directory where duplicate_entries.tsv will be written
+    in_fa : str
+        The path to the input fasta file to be deduplicated
+    out_fa : str
+        The path to where the ouput deduplicated fasta file should be written
+    """
     import os
     from Bio import SeqIO
     from Bio.Seq import Seq
@@ -45,7 +60,7 @@ def dedup_sequences(output_dir, in_fa, out_fa):
 
     ## write out the duplicate entries in the same format 
     ## the salmon / pufferfish indexer uses
-    dup_file_name = os.path.sep.join([output_dir, "duplicate_entries.txt"])
+    dup_file_name = os.path.sep.join([output_dir, "duplicate_entries.tsv"])
     with open(dup_file_name, 'w') as dup_file:
         dup_file.write("RetainedRef\tDuplicateRef\n")
         for k, v in record_representatives.items():
