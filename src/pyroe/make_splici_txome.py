@@ -257,12 +257,12 @@ def make_splici_txome(
     introns.Name = introns.gene_id
 
     if no_flanking_merge:
-        introns = introns.merge(strand=True, by=["Name"], slack=1)
+        introns = introns.merge(strand=True, by=["Name"], slack=0)
 
     introns = introns.extend(flank_length)
 
     if not no_flanking_merge:
-        introns = introns.merge(strand=True, by=["Name"], slack=1)
+        introns = introns.merge(strand=True, by=["Name"], slack=0)
 
     introns.Gene = introns.Name
     introns.Name = ["-I".join(map(str, z)) for z in zip(introns.Name, introns.Name.groupby(introns.Name)\
