@@ -265,7 +265,13 @@ def make_splici_txome(
         introns = introns.merge(strand=True, by=["Name"], slack=1)
 
     introns.Gene = introns.Name
-    introns.Name = ["-I".join(map(str, z)) for tid, size in introns.Name.value_counts().items() for z in zip([tid] * size, list(range(1, size + 1)))]
+    introns = introns.sort(["Name", "Start", "End"])
+    introns.Name = ["-I".join(map(str, z)) for z in zip(introns.Name, introns.Name.groupby(introns.Name)\
+                                                                                .cumcount()\
+                                                                                .astype(str)\
+                                                                                .replace('0', '',)\
+                                                                                .values)]
+
 
     ## trim outbounded introns
     with open(genome_path) as fasta_file:
