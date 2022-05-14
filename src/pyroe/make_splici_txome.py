@@ -265,7 +265,6 @@ def make_splici_txome(
         introns = introns.merge(strand=True, by=["Name"], slack=1)
 
     introns.Gene = introns.Name
-    introns = introns.sort(["Name", "Start", "End"])
     introns.Name = ["-I".join(map(str, z)) for z in zip(introns.Name, introns.Name.groupby(introns.Name)\
                                                                                 .cumcount()\
                                                                                 .astype(str)\
