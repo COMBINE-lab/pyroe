@@ -1,17 +1,17 @@
 from .pyroe_utils import say, check_dataset_ids
-from .fetch_processed_quant import fetch_processed_quant
-from .load_fry import load_fry
 from .ProcessedQuant import ProcessedQuant
 import os
 import shutil
+
+
 def load_processed_quant(
-    dataset_ids = [],
-    fetch_dir = "processed_quant",
-    force = False,
-    delete_tar = False,
+    dataset_ids=[],
+    fetch_dir="processed_quant",
+    force=False,
+    delete_tar=False,
     output_format="scRNA",
-    nonzero = False,
-    quiet = False
+    nonzero=False,
+    quiet=False,
 ):
     """
     Download the quantification result of the preprocessed 10x datasets.
@@ -28,26 +28,26 @@ def load_processed_quant(
 
     force : `bool` (default: `False`)
         True if existing datasets should be re-downloaded.
-        
+
     delete_tar : `bool` (default: `False`)
         True if intermediate tar files should be deleted.
         If False, they will be stored in the quant_tar
         directory under the fetch_dir directory.
-    
+
     output_format : `str` or `dict`
-        Either a str represents one of the pre-defined output 
-        formats, which are "scRNA", "snRNA", "raw" and "velocity", 
+        Either a str represents one of the pre-defined output
+        formats, which are "scRNA", "snRNA", "raw" and "velocity",
         that will be used for loading all fetched datasets, \\
         or a `dict` represent a customized format that will
         be used for loading all fetched datasets,\\
         or a `dict` of `str` or `dict` in which keys are the dataset
-        ids to be fetched and values are the output_format that will 
-        be used for loading each fetched dataset. 
-        See [load_fry](https://github.com/COMBINE-lab/pyroe/blob/main/src/pyroe/load_fry.py) 
+        ids to be fetched and values are the output_format that will
+        be used for loading each fetched dataset.
+        See [load_fry](https://github.com/COMBINE-lab/pyroe/blob/main/src/pyroe/load_fry.py)
         for the details of output_format.
 
     nonzero : `bool` or `list` (default: `False`)
-        True if cells with non-zero expression value 
+        True if cells with non-zero expression value
         across all genes should be filtered in each layer.
         False if unexpressed genes should be kept.
         If a list of `bool` is passed, the booleans
@@ -55,14 +55,14 @@ def load_processed_quant(
 
     quiet : `bool` (default: `False`)
         True if function should be quiet.
-        False if messages (including error messages) should be printed out. 
+        False if messages (including error messages) should be printed out.
 
 
     Returns
     -------
-    If an empty dataset_ids list is given, a dataframe 
+    If an empty dataset_ids list is given, a dataframe
     containing the information of all available datasets
-    will be returned. If one or more dataset ids are 
+    will be returned. If one or more dataset ids are
     provided as dataset_ids, a dictionary of ProcessedQuant
     instances will be returned. Each represents a fetched dataset,
     and is named by the dataset id.
@@ -70,14 +70,14 @@ def load_processed_quant(
     Notes
     -----
     10x Genomics provides many publicly available single-cell
-    RNA-sequencing experiments on their 
+    RNA-sequencing experiments on their
     [website](https://www.10xgenomics.com/resources/datasets).
     To avoid reinventing wheels, we processed these datasets
-    using a nextflow-based 
-    [alevin-fry workflow](https://github.com/COMBINE-lab/10x-requant) 
-    and made the quantification results available for free downloading. 
+    using a nextflow-based
+    [alevin-fry workflow](https://github.com/COMBINE-lab/10x-requant)
+    and made the quantification results available for free downloading.
     Currently, the available datasets include (Notice that dataset id starts from **1**, not zero):
-    
+
     1. [500 Human PBMCs, 3' LT v3.1, Chromium Controller](https://www.10xgenomics.com/resources/datasets/500-human-pbm-cs-3-lt-v-3-1-chromium-controller-3-1-low-6-1-0): [link to the quant result](https://umd.box.com/shared/static/tg919re5gd4klua39z3zemcg9ya422am.tar)
     1. [500 Human PBMCs, 3' LT v3.1, Chromium X](https://www.10xgenomics.com/resources/datasets/500-human-pbm-cs-3-lt-v-3-1-chromium-x-3-1-low-6-1-0): [link to the quant result](https://umd.box.com/shared/static/lrl68q2lz0ltsvs89iazbr302p50wnqj.tar)
     1. [1k PBMCs from a Healthy Donor (v3 chemistry)](https://www.10xgenomics.com/resources/datasets/1-k-pbm-cs-from-a-healthy-donor-v-3-chemistry-3-standard-3-0-0): [link to the quant result](https://umd.box.com/shared/static/wrn19wsmkem1jyc9seqpe4pxto5zimwa.tar)
@@ -114,10 +114,10 @@ def load_processed_quant(
     1. [1k Brain Cells from an E18 Mouse (v2 chemistry)](https://www.10xgenomics.com/resources/datasets/1-k-brain-cells-from-an-e-18-mouse-v-2-chemistry-3-standard-3-0-0): [link to the quant result](https://umd.box.com/shared/static/a53twm69uo2xf6778asuvw2aft7wkur5.tar)
     1. [1k Heart Cells from an E18 mouse (v2 chemistry)](https://www.10xgenomics.com/resources/datasets/1-k-heart-cells-from-an-e-18-mouse-v-2-chemistry-3-standard-3-0-0): [link to the quant result](https://umd.box.com/shared/static/p4ieuzimfgrjfsr9rzhrn48kved4ha7m.tar)
 
-    To obtain the information of the available datasets as 
+    To obtain the information of the available datasets as
     a dataframe, one can run `load_processed_quant()`
     """
-    
+
     say(quiet, "Processing parameters")
     # load available dataset sheet
     available_datasets = ProcessedQuant.get_available_dataset_df()
@@ -132,7 +132,7 @@ def load_processed_quant(
 
     # if no id left, return an error
     if not dataset_ids:
-        raise ValueError(f"No valid dataset id found, can not proceed")
+        raise ValueError("No valid dataset id found, can not proceed")
 
     # check whether output_format are valid
     # we just check the length, the validity of
@@ -141,25 +141,29 @@ def load_processed_quant(
         # if a dictionary is given,
         # it should be either one customized format
         # or the format of each fetched datasets
-        # so check the name 
+        # so check the name
         if list(output_format.keys()).sort() != dataset_ids.sort():
             # now it should be one customized format
-            output_format = dict(zip(dataset_ids, [output_format]*nd))
+            output_format = dict(zip(dataset_ids, [output_format] * nd))
         # otherwise, each dataset should get a format, so check the length
         if len(output_format) != nd:
-            raise ValueError("The providing output_format dictionary has different length with dataset_ids, cannot proceed")
-    elif (type(output_format) is str):
+            raise ValueError(
+                "The providing output_format dictionary has different length with dataset_ids, cannot proceed"
+            )
+    elif type(output_format) is str:
         # if a str is given, it should be a pre-defined format
         # and it will be used for all datasets
-        output_format = dict(zip(dataset_ids, [output_format]*nd))
+        output_format = dict(zip(dataset_ids, [output_format] * nd))
     else:
         raise ValueError("The providing output_format is invalid, cannot proceed")
 
     if type(nonzero) is dict:
         if len(nonzero) != nd:
-            raise ValueError("The providing nonzero dictionary has different length with dataset_ids, cannot proceed")
+            raise ValueError(
+                "The providing nonzero dictionary has different length with dataset_ids, cannot proceed"
+            )
     else:
-        nonzero = dict(zip(dataset_ids, [nonzero]*nd))
+        nonzero = dict(zip(dataset_ids, [nonzero] * nd))
 
     tar_dir = os.path.join(fetch_dir, "quant_tar")
     if not os.path.exists(tar_dir):
@@ -169,15 +173,16 @@ def load_processed_quant(
     for dataset_id in dataset_ids:
         nonzero_ds = nonzero[dataset_id]
         output_format_ds = output_format[dataset_id]
-        processed_quant = ProcessedQuant.FDL(dataset_id,
-                                                    tar_dir=tar_dir,
-                                                    quant_dir=fetch_dir,
-                                                    output_format=output_format_ds,
-                                                    nonzero=nonzero_ds,
-                                                    force=force, 
-                                                    quiet=quiet)
+        processed_quant = ProcessedQuant.FDL(
+            dataset_id,
+            tar_dir=tar_dir,
+            quant_dir=fetch_dir,
+            output_format=output_format_ds,
+            nonzero=nonzero_ds,
+            force=force,
+            quiet=quiet,
+        )
 
-        
         if delete_tar:
             processed_quant.tar_path = None
         pq_list[dataset_id] = processed_quant

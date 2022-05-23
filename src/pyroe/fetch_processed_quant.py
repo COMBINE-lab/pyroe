@@ -3,20 +3,21 @@ from .ProcessedQuant import ProcessedQuant
 import os
 import shutil
 
+
 def fetch_processed_quant(
-    dataset_ids = [],
-    fetch_dir = "processed_quant",
-    force = False,
-    delete_tar = False,
-    quiet = False
+    dataset_ids=[],
+    fetch_dir="processed_quant",
+    force=False,
+    delete_tar=False,
+    quiet=False,
 ):
     """
     This is a thin wrapper of the ProcessedQuant class.
-    This function can fetch and decompress multiple datasets 
-    specified in the `dataset_ids` list and returns a 
+    This function can fetch and decompress multiple datasets
+    specified in the `dataset_ids` list and returns a
     ProcessedQuant object for each fetched dataset.
     If a empty list is passed as the dataset_ids,
-    a dataframe contains the information of 
+    a dataframe contains the information of
     all available datasets will be returned.
 
     Required Parameters
@@ -28,38 +29,38 @@ def fetch_processed_quant(
     ----------
     fetch_dir : `str` (default: `processed_quant`)
         The path to a directory for storing fetched datasets.
-    
+
     force : `bool` (default: `False`)
         True if existing datasets should be re-downloaded.
-        
+
     delete_tar : `bool` (default: `False`)
         True if intermediate tar files should be deleted.
         If False, they will be stored in the quant_tar
         directory under the fetch_dir directory.
-    
+
     quiet : `bool` (default: `False`)
         True if function should be quiet.
-        False if messages (including error messages) should be printed out. 
+        False if messages (including error messages) should be printed out.
 
     Returns
     -------
-    If an empty dataset_ids list is given, a dataframe 
+    If an empty dataset_ids list is given, a dataframe
     containing the information of all available datasets
-    will be returned. If one or more dataset ids are 
+    will be returned. If one or more dataset ids are
     provided as dataset_ids, a dictionary of ProcessedQuant
     instances will be returned. Each represents a fetched dataset.
 
     Notes
     -----
     10x Genomics provides many publicly available single-cell
-    RNA-sequencing experiments on their 
+    RNA-sequencing experiments on their
     [website](https://www.10xgenomics.com/resources/datasets).
     To avoid reinventing wheels, we processed these datasets
-    using a nextflow-based 
-    [alevin-fry workflow](https://github.com/COMBINE-lab/10x-requant) 
-    and made the quantification results available for free downloading. 
+    using a nextflow-based
+    [alevin-fry workflow](https://github.com/COMBINE-lab/10x-requant)
+    and made the quantification results available for free downloading.
     Currently, the available datasets include (Notice that dataset id starts form one, not zero):
-    
+
     1. [500 Human PBMCs, 3' LT v3.1, Chromium Controller](https://www.10xgenomics.com/resources/datasets/500-human-pbm-cs-3-lt-v-3-1-chromium-controller-3-1-low-6-1-0): [link to the quant result](https://umd.box.com/shared/static/tg919re5gd4klua39z3zemcg9ya422am.tar)
     1. [500 Human PBMCs, 3' LT v3.1, Chromium X](https://www.10xgenomics.com/resources/datasets/500-human-pbm-cs-3-lt-v-3-1-chromium-x-3-1-low-6-1-0): [link to the quant result](https://umd.box.com/shared/static/lrl68q2lz0ltsvs89iazbr302p50wnqj.tar)
     1. [1k PBMCs from a Healthy Donor (v3 chemistry)](https://www.10xgenomics.com/resources/datasets/1-k-pbm-cs-from-a-healthy-donor-v-3-chemistry-3-standard-3-0-0): [link to the quant result](https://umd.box.com/shared/static/wrn19wsmkem1jyc9seqpe4pxto5zimwa.tar)
@@ -96,7 +97,7 @@ def fetch_processed_quant(
     1. [1k Brain Cells from an E18 Mouse (v2 chemistry)](https://www.10xgenomics.com/resources/datasets/1-k-brain-cells-from-an-e-18-mouse-v-2-chemistry-3-standard-3-0-0): [link to the quant result](https://umd.box.com/shared/static/a53twm69uo2xf6778asuvw2aft7wkur5.tar)
     1. [1k Heart Cells from an E18 mouse (v2 chemistry)](https://www.10xgenomics.com/resources/datasets/1-k-heart-cells-from-an-e-18-mouse-v-2-chemistry-3-standard-3-0-0): [link to the quant result](https://umd.box.com/shared/static/p4ieuzimfgrjfsr9rzhrn48kved4ha7m.tar)
 
-    To obtain the information of the available datasets as 
+    To obtain the information of the available datasets as
     a dataframe, one can run `load_processed_quant()`
     """
     available_datasets = ProcessedQuant.get_available_dataset_df()
@@ -112,7 +113,7 @@ def fetch_processed_quant(
 
     # if no id left, return an error
     if not dataset_ids:
-        raise ValueError(f"No valid dataset id found, can not proceed")
+        raise ValueError("No valid dataset id found, can not proceed")
 
     # download the quantification tar file for each queried dataset.
     pq_list = {}
@@ -125,9 +126,9 @@ def fetch_processed_quant(
     # download the quantification tar file for each queried dataset.
     for dataset_id in dataset_ids:
         processed_quant = ProcessedQuant(dataset_id)
-        processed_quant.fetch_quant(tar_dir=tar_dir,force=force, quiet=quiet)
+        processed_quant.fetch_quant(tar_dir=tar_dir, force=force, quiet=quiet)
         processed_quant.decompress_quant(quant_dir=fetch_dir, force=force, quiet=quiet)
-        
+
         if delete_tar:
             processed_quant.tar_path = None
         pq_list[dataset_id] = processed_quant
