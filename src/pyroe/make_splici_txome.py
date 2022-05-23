@@ -9,10 +9,10 @@ def append_extra(extra_infile, out_fa, out_t2g3col, col_status):
     col_status : char
         splicing status to use for these records (one of 'S' or 'U')
     """
-    from Bio import SeqIO
+
     from Bio.SeqIO.FastaIO import SimpleFastaParser
 
-    ## write extra sequences to the t2g file
+    # write extra sequences to the t2g file
     with open(extra_infile) as extra_in_fa:
         with open(out_fa, "a") as splici_fa:
             with open(out_t2g3col, "a") as t2g:
@@ -22,11 +22,12 @@ def append_extra(extra_infile, out_fa, out_t2g3col, col_status):
                     splici_fa.write(f"{sequence}\n")
                     t2g.write(f"{tid}\t{tid}\t{col_status}\n")
 
+
 def dedup_sequences(output_dir, in_fa, out_fa):
     """
-    This function deduplicates the fasta sequences in `in_fa`, writes the 
-    deduplicated sequences in fasta format to `out_fa`, and also produces a 
-    2-column tsv file in `ouput_dir`/duplicate_entries.tsv recording the 
+    This function deduplicates the fasta sequences in `in_fa`, writes the
+    deduplicated sequences in fasta format to `out_fa`, and also produces a
+    2-column tsv file in `ouput_dir`/duplicate_entries.tsv recording the
     entries that have been removed and the retained entry that they match.
     Note: It is allowed (and in some cases intended) that `in_fa` == `out_fa`.
     In this case, the input fasta file will be overwritten.
@@ -42,13 +43,12 @@ def dedup_sequences(output_dir, in_fa, out_fa):
     from Bio import SeqIO
     from Bio.Seq import Seq
     from Bio.SeqRecord import SeqRecord
-    from Bio.SeqIO.FastaIO import SimpleFastaParser
-    
+
     record_representatives = {}
 
-    ## read from the input fasta file and track 
-    ## the duplicate sequences
-    for record in SeqIO.parse(in_fa, "fasta"):  
+    # read from the input fasta file and track
+    # the duplicate sequences
+    for record in SeqIO.parse(in_fa, "fasta"):
         seq = str(record.seq)
         name = record.id.split()[0]
         # if we haven't seen it yet, this is the representative
@@ -58,21 +58,21 @@ def dedup_sequences(output_dir, in_fa, out_fa):
         else:
             record_representatives[seq] = [name]
 
-    ## write out the duplicate entries in the same format 
-    ## the salmon / pufferfish indexer uses
+    # write out the duplicate entries in the same format
+    # the salmon / pufferfish indexer uses
     dup_file_name = os.path.sep.join([output_dir, "duplicate_entries.tsv"])
-    with open(dup_file_name, 'w') as dup_file:
+    with open(dup_file_name, "w") as dup_file:
         dup_file.write("RetainedRef\tDuplicateRef\n")
         for k, vu in record_representatives.items():
             if len(vu) > 1:
                 v = sorted(vu)
                 for dup in v[1:]:
                     dup_file.write(f"{v[0]}\t{dup}\n")
-    
-    ## write the deduplicated output to file
-    ## Note: it might be that out_file == in_file and we 
-    ## are overwriting the input.
-    with open(out_fa, 'w') as ofile:
+
+    # write the deduplicated output to file
+    # Note: it might be that out_file == in_file and we
+    # are overwriting the input.
+    with open(out_fa, "w") as ofile:
         for k, vu in record_representatives.items():
             v = sorted(vu)
             rec = SeqRecord(Seq(k), id=v[0], description="")
@@ -85,13 +85,13 @@ def make_splici_txome(
     read_length,
     output_dir,
     flank_trim_length=5,
-    filename_prefix = "splici",
-    extra_spliced = None,
-    extra_unspliced = None,
-    dedup_seqs = False,
-    no_bt = False,
-    bt_path = "bedtools",
-    no_flanking_merge = False
+    filename_prefix="splici",
+    extra_spliced=None,
+    extra_unspliced=None,
+    dedup_seqs=False,
+    no_bt=False,
+    bt_path="bedtools",
+    no_flanking_merge=False,
 ):
     """
     Construct the splici (spliced + introns) transcriptome for alevin-fry.
@@ -106,31 +106,31 @@ def make_splici_txome(
 
     read_length : int
         The read length of the single-cell experiment being processed.
-    
+
     output_dir : str
-        The output directory, where the splici reference files will 
+        The output directory, where the splici reference files will
         be written.
 
     Optional Parameters
     ----------
 
     flank_trim_length : int
-        The flank trimming length. 
+        The flank trimming length.
         The final flank length is obtained by subtracting
         the flank_trim_length from the read_length.
 
 
     filename_prefix : str
-        The file name prefix of the generated output files. 
+        The file name prefix of the generated output files.
         The derived flank length will be automatically
         appended to the provided prefix.
 
     extra_spliced : str
-        A path to a fasta file. The records in this fasta file will be 
+        A path to a fasta file. The records in this fasta file will be
         regarded as spliced transcripts.
 
     extra_unspliced : str
-        The path to a fasta file. The records in this fasta file will be 
+        The path to a fasta file. The records in this fasta file will be
         regarded as introns.
 
     dedup_seqs : bool
@@ -138,11 +138,11 @@ def make_splici_txome(
         deduplicated.
 
     no_bt : bool
-        If true, biopython, instead of bedtools, will be used for 
+        If true, biopython, instead of bedtools, will be used for
         generating splici reference files.
 
     bt_path : str
-        The path to bedtools v2.30.0 or greater if it is not in the environment PATH. 
+        The path to bedtools v2.30.0 or greater if it is not in the environment PATH.
 
     no_flanking_merge : bool
         If true, overlapping introns caused by the added flanking length will not be merged.
@@ -150,19 +150,17 @@ def make_splici_txome(
 
     Returns
     -------
-    Nothing will be returned. The splici reference files will be written 
-    to disk. 
+    Nothing will be returned. The splici reference files will be written
+    to disk.
 
     Notes
     -----
     * If using bedtools, a temp.bed and a temp.fa will be created and
-        then deleted. These two files encodes the introns of each gene 
+        then deleted. These two files encodes the introns of each gene
         and the exons of each transcript of each gene.
 
     """
-    
 
-    import pandas as pd
     import pyranges as pr
 
     import warnings
@@ -179,25 +177,28 @@ def make_splici_txome(
 
     # Preparation
 
-    ## check flanking length
+    # check flanking length
     flank_length = read_length - flank_trim_length
 
     if flank_length < 0:
         raise ValueError("Flank trim length cannot be larger than read length!")
 
-    ## check fasta file
+    # check fasta file
     if not os.path.isfile(genome_path):
         raise IOError("Cannot open the input fasta file!")
-    
-    ## check gtf file
+
+    # check gtf file
     if not os.path.isfile(gtf_path):
         raise IOError("Cannot open the input gtf file!")
 
-
     def check_bedtools_version(bt_check_path):
         try:
-            vstr = subprocess.run([bt_path, "--version"],
-                                  capture_output=True).stdout.decode().strip().split("v")[1]
+            vstr = (
+                subprocess.run([bt_path, "--version"], capture_output=True)
+                .stdout.decode()
+                .strip()
+                .split("v")[1]
+            )
             found_ver = parse_version(vstr)
             req_ver = parse_version("2.30.0")
             return found_ver >= req_ver
@@ -205,7 +206,7 @@ def make_splici_txome(
             # in this case couldn't even run subprocess
             return False
 
-    ## check bedtools
+    # check bedtools
     if not no_bt:
         # check at the provided path
         if not check_bedtools_version(bt_path):
@@ -214,34 +215,38 @@ def make_splici_txome(
             if bt_path == "bedtools":
                 # in this case, there's nowhere else to check
                 # so give up on bedtools
-                print("bedtools in the environemnt PATH is either",
-                      "older than v.2.30.0 or doesn't exist.",
-                      "\nBiopython will be used.")
+                print(
+                    "bedtools in the environemnt PATH is either",
+                    "older than v.2.30.0 or doesn't exist.",
+                    "\nBiopython will be used.",
+                )
                 no_bt = True
             else:
-                print("bedtools specified by bt_path is either",
-                        "older than v.2.30.0 or doesn't exist.",
-                        "\nTry finding bedtools in the environmental PATH.")
+                print(
+                    "bedtools specified by bt_path is either",
+                    "older than v.2.30.0 or doesn't exist.",
+                    "\nTry finding bedtools in the environmental PATH.",
+                )
                 # if it's not ok at the standard system path
                 # fallback to biopython
                 if not check_bedtools_version("bedtools"):
-                    print("bedtools in the environemnt PATH is either",
-                            "older than v.2.30.0 or doesn't exist.",
-                            "\nBiopython will be used.")
+                    print(
+                        "bedtools in the environemnt PATH is either",
+                        "older than v.2.30.0 or doesn't exist.",
+                        "\nBiopython will be used.",
+                    )
                     no_bt = True
                 # found it at the system path
                 else:
                     bt_path = "bedtools"
                     print("Using bedtools in the environmental PATH.")
 
-
-    ## create out folder and temp folder inside
-    ### create output folder
+    # create out folder and temp folder inside
+    # create output folder
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
-
-    ## specify output file names
+    # specify output file names
     filename_prefix = filename_prefix + "_fl" + str(flank_length)
     out_fa = os.path.join(output_dir, filename_prefix + ".fa")
     out_t2g3col = os.path.join(output_dir, filename_prefix + "_t2g_3col.tsv")
@@ -251,8 +256,8 @@ def make_splici_txome(
 
     # get introns
     # the introns() function uses inplace=True argument from pandas,
-    # which will trigger an FutureWarning. 
-    warnings.simplefilter(action='ignore', category=FutureWarning)
+    # which will trigger an FutureWarning.
+    warnings.simplefilter(action="ignore", category=FutureWarning)
     introns = gr.features.introns(by="transcript")
     introns.Name = introns.gene_id
 
@@ -265,26 +270,35 @@ def make_splici_txome(
         introns = introns.merge(strand=True, by=["Name"], slack=0)
 
     introns.Gene = introns.Name
-    introns.Name = ["-I".join(map(str, z)) for z in zip(introns.Name, introns.Name.groupby(introns.Name)\
-                                                                                .cumcount()\
-                                                                                .astype(str)\
-                                                                                .replace('0', '',)\
-                                                                                .values)]
+    introns.Name = [
+        "-I".join(map(str, z))
+        for z in zip(
+            introns.Name,
+            introns.Name.groupby(introns.Name)
+            .cumcount()
+            .astype(str)
+            .replace(
+                "0",
+                "",
+            )
+            .values,
+        )
+    ]
 
-
-    ## trim outbounded introns
+    # trim outbounded introns
     with open(genome_path) as fasta_file:
-        chromsize =  {title.split()[0]:len(sequence) for title, sequence in SimpleFastaParser(fasta_file)}
+        chromsize = {
+            title.split()[0]: len(sequence)
+            for title, sequence in SimpleFastaParser(fasta_file)
+        }
     introns = pr.gf.genome_bounds(introns, chromsize, clip=True)
 
-    ## deduplicate introns
+    # deduplicate introns
     if dedup_seqs:
         introns.drop_duplicate_positions()
-    
-    ## add splice status for introns
+
+    # add splice status for introns
     introns.splice_status = "U"
-
-
 
     # get exons
     exons = gr[gr.Feature == "exon"]
@@ -293,18 +307,19 @@ def make_splici_txome(
     exons.Gene = exons.gene_id
     exons = exons.drop(exons.columns[~exons.columns.isin(introns.columns)].tolist())
     exons = exons.sort(["Name", "Start", "End"])
-    ## add splice status for exons
+    # add splice status for exons
     exons.splice_status = "S"
 
     # concat spliced transcripts and introns as splici
     splici = pr.concat([exons, introns])
 
-
     # splici = splici.sort(["Name", "Start", "End", "Gene"])
-    
+
     # write to files
-    ## t2g_3col.tsv
-    splici.df[["Name", "Gene", "splice_status"]].drop_duplicates().to_csv(out_t2g3col, sep="\t", header=False, index=False)
+    # t2g_3col.tsv
+    splici.df[["Name", "Gene", "splice_status"]].drop_duplicates().to_csv(
+        out_t2g3col, sep="\t", header=False, index=False
+    )
     # print(splici.head())
     tid2strand = dict(zip(splici.Name, splici.Strand))
 
@@ -312,7 +327,7 @@ def make_splici_txome(
     if not no_bt:
         try:
 
-            ### create temp folder
+            # create temp folder
             temp_dir = os.path.join(output_dir, "temp")
             if not os.path.exists(temp_dir):
                 os.makedirs(temp_dir)
@@ -323,19 +338,29 @@ def make_splici_txome(
             splici.to_bed(temp_bed, keep=True)
 
             # run bedtools, ignore strand for now
-            bt_r = subprocess.run(" ".join([bt_path, "getfasta",
-                                            "-fi", genome_path,
-                                            "-fo", temp_fa, 
-                                            "-bed", temp_bed,
-                                            # "-s", 
-                                            "-nameOnly"]),
-                                    shell=True,
-                                    capture_output=True)
+            bt_r = subprocess.run(
+                " ".join(
+                    [
+                        bt_path,
+                        "getfasta",
+                        "-fi",
+                        genome_path,
+                        "-fo",
+                        temp_fa,
+                        "-bed",
+                        temp_bed,
+                        # "-s",
+                        "-nameOnly",
+                    ]
+                ),
+                shell=True,
+                capture_output=True,
+            )
 
             # check return code
             if bt_r.returncode != 0:
                 raise ValueError("Bedtools failed.")
-            
+
             # parse temp fasta file to concat exons of each transcript
             ei_parser = SeqIO.parse(temp_fa, "fasta")
             prev_rec = next(ei_parser)
@@ -351,7 +376,9 @@ def make_splici_txome(
 
                     else:
                         if tid2strand[prev_rec.id] == "-":
-                            prev_rec = prev_rec.reverse_complement(id=True, description=True)
+                            prev_rec = prev_rec.reverse_complement(
+                                id=True, description=True
+                            )
                         SeqIO.write(prev_rec, out_handle, "fasta")
                         prev_rec = seq_record
                 # Don't forget our last customer
@@ -364,34 +391,43 @@ def make_splici_txome(
             warnings.warn("Bedtools failed, use biopython instead.")
             shutil.rmtree(temp_dir, ignore_errors=True)
 
-
-
-
     if no_bt:
 
         from Bio.Seq import Seq
         from Bio.SeqFeature import SeqFeature, FeatureLocation
 
         from Bio.SeqRecord import SeqRecord
-        
+
         with open(out_fa, "w") as out_handle:
             # read fasta, process a chromosome at a time
             for seq_record in SeqIO.parse(genome_path, "fasta"):
                 # get all records on that chromosome
                 chr_records = introns[introns.Chromosome == seq_record.id].df
                 if not chr_records.empty:
-                    chr_records.Strand = chr_records.Strand.replace(['+', '-'],[+1, -1])
+                    chr_records.Strand = chr_records.Strand.replace(
+                        ["+", "-"], [+1, -1]
+                    )
                     # init seq list
                     intron_seqs = []
                     # for each intron record
                     for (idx, intron_record) in chr_records.iterrows():
                         # create Seqeture object for extracting sequence from chromosome
-                        intron_feature = SeqFeature(FeatureLocation(intron_record.Start, intron_record.End), type="intron", strand=intron_record.Strand, id=intron_record.Name)
+                        intron_feature = SeqFeature(
+                            FeatureLocation(intron_record.Start, intron_record.End),
+                            type="intron",
+                            strand=intron_record.Strand,
+                            id=intron_record.Name,
+                        )
                         # append the intron sequence to the seq list, specify name as well
-                        intron_seqs.append(SeqRecord(intron_feature.extract(seq_record).seq, id=intron_record.Name, description=""))
+                        intron_seqs.append(
+                            SeqRecord(
+                                intron_feature.extract(seq_record).seq,
+                                id=intron_record.Name,
+                                description="",
+                            )
+                        )
                     # finally, write all intron sequences at once.
                     SeqIO.write(intron_seqs, out_handle, "fasta")
-
 
                 # Then, process spliced transcripts
                 chr_records = exons[exons.Chromosome == seq_record.id].df
@@ -406,31 +442,42 @@ def make_splici_txome(
                         for (idx, exon_record) in exon_records.iterrows():
                             # create SeqFeature object for the exon record
                             # ignore strand for now, get reverse complement later if needed
-                            exon_feature = SeqFeature(FeatureLocation(exon_record.Start, exon_record.End), type="exon")
+                            exon_feature = SeqFeature(
+                                FeatureLocation(exon_record.Start, exon_record.End),
+                                type="exon",
+                            )
                             # extract exon sequence from chromosome and append to exon seq list
-                            exon_seqs.append(SeqRecord(exon_feature.extract(seq_record).seq, id=tid, description=""))
+                            exon_seqs.append(
+                                SeqRecord(
+                                    exon_feature.extract(seq_record).seq,
+                                    id=tid,
+                                    description="",
+                                )
+                            )
                         # append the txp sequence to spliced txp seq list
                         # consider strand
                         if tid2strand[tid] == "-":
-                            txp_seqs.append(sum(exon_seqs, Seq("")).reverse_complement(id=True, description=True))
+                            txp_seqs.append(
+                                sum(exon_seqs, Seq("")).reverse_complement(
+                                    id=True, description=True
+                                )
+                            )
                         else:
                             txp_seqs.append(sum(exon_seqs, Seq("")))
                     # write all spliced transcript serquence at once.
                     SeqIO.write(txp_seqs, out_handle, "fasta")
 
-
-
     # append extra spliced transcript onto splici
     if extra_spliced is not None:
-        append_extra(extra_spliced, out_fa, out_t2g3col, 'S')
-                        
+        append_extra(extra_spliced, out_fa, out_t2g3col, "S")
+
     # append extra unspliced transcript onto splici
     if extra_unspliced is not None:
-        append_extra(extra_unspliced, out_fa, out_t2g3col, 'U')
+        append_extra(extra_unspliced, out_fa, out_t2g3col, "U")
 
     if dedup_seqs:
-        # Note: out_fa is intentionally passed as both 
+        # Note: out_fa is intentionally passed as both
         # the input and output file name parameters because
-        # we want to overwirte the duplicate fasta with 
+        # we want to overwirte the duplicate fasta with
         # the deduplicated fasta.
         dedup_sequences(output_dir, out_fa, out_fa)
