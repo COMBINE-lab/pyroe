@@ -202,7 +202,7 @@ def make_splici_txome(
             found_ver = parse_version(vstr)
             req_ver = parse_version("2.30.0")
             return found_ver >= req_ver
-        except:
+        except subprocess.CalledProcessError:
             # in this case couldn't even run subprocess
             return False
 
@@ -386,7 +386,7 @@ def make_splici_txome(
                     prev_rec = prev_rec.reverse_complement(id=True, description=True)
                 SeqIO.write(prev_rec, out_handle, "fasta")
             shutil.rmtree(temp_dir, ignore_errors=True)
-        except:
+        except subprocess.CalledProcessError:
             no_bt = True
             warnings.warn("Bedtools failed, use biopython instead.")
             shutil.rmtree(temp_dir, ignore_errors=True)
