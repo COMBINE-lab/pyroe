@@ -1,14 +1,12 @@
 try:
     import scanpy
-except ModuleNotFoundError as _:
+except ModuleNotFoundError:
     print(
         "scanpy must be installed to enable the load_fry() function. Use `conda install -c scanpy ` or `pip install scanpy` to install it."
     )
     import sys
 
     sys.exit(1)
-
-import scanpy
 
 
 def load_fry(frydir, output_format="scRNA", nonzero=False, quiet=False):
