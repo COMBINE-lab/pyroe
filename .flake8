@@ -1,3 +1,16 @@
 [flake8]
 max-line-length = 88
 ignore = E501, W503
+
+exclude =
+    .venv,
+    .git,
+    .tox,
+    dist,
+    doc,
+    *openstack/common/*,
+    *lib/python*,
+    *egg,
+    build,
+    tools/xenserver*,
+    releasenotes
