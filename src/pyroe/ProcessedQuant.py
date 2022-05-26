@@ -55,17 +55,19 @@ class ProcessedQuant:
 
         # get the info of the queried dataset id, python is zero based.
         available_dataset = available_datasets.iloc[dataset_id - 1, :]
-        self.dataset_id = dataset_id
+        self.dataset_id = available_dataset["dataset_id"]
         self.chemistry = available_dataset["chemistry"]
         self.reference = available_dataset["reference"]
         self.dataset_name = available_dataset["dataset_name"]
-        self.link = available_dataset["link"]
-        self.data_url = available_dataset["data_url"]
-        self.MD5 = available_dataset["MD5"]
+        self.dataset_url = available_dataset["dataset_url"]
+        self.fastq_url = available_dataset["fastq_url"]
+        self.fastq_MD5sum = available_dataset["fastq_MD5sum"]
         self.delete_fastq = available_dataset["delete_fastq"]
-        self.feature_barcode = available_dataset["feature_barcode"]
-        self.library_csv = available_dataset["library_csv"]
-        self.quant_link = available_dataset["quant_link"]
+        self.feature_barcode_csv_url = available_dataset["feature_barcode_csv_url"]
+        self.multiplexing_library_csv_url = available_dataset[
+            "multiplexing_library_csv_url"
+        ]
+        self.quant_tar_url = available_dataset["quant_tar_url"]
         self.quant_path = None
         self.tar_path = None
         self.anndata = None
@@ -135,7 +137,7 @@ class ProcessedQuant:
                 return
 
         # download tar file
-        urllib.request.urlretrieve(self.quant_link, tar_path)
+        urllib.request.urlretrieve(self.quant_tar_url, tar_path)
         self.tar_path = tar_path
         say(quiet, "  - Fetched quant tar is saved as:")
         say(quiet, f"    {self.tar_path}")
@@ -338,18 +340,18 @@ class ProcessedQuant:
 
     def check_validity(self):
         if (
-            self.quant_link is None
+            self.quant_tar_url is None
             or self.dataset_id is None
             or self.chemistry is None
             or self.reference is None
             or self.dataset_name is None
-            or self.link is None
-            or self.data_url is None
-            or self.MD5 is None
+            or self.dataset_url is None
+            or self.fastq_url is None
+            or self.fastq_MD5sum is None
             or self.delete_fastq is None
-            or self.feature_barcode is None
-            or self.library_csv is None
-            or self.quant_link is None
+            or self.feature_barcode_csv_url is None
+            or self.multiplexing_library_csv_url is None
+            or self.quant_tar_url is None
         ):
             raise ValueError(
                 "Incomplete class object, use",
