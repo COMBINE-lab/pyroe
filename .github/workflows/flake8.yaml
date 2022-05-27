@@ -19,4 +19,4 @@ jobs:
           ignore: "E501, W503"
           #exclude: "src/ignoreme.py"
           max-line-length: "88"
-          path: "src"
+          #path: "src"
