@@ -15,10 +15,9 @@ jobs:
         echo $CONDA/bin >> $GITHUB_PATH
     - name: Install dependencies
       run: |
-        conda create -n pytest pandas bioconda::biopython bioconda::pyranges packaging bioconda::scanpy pytest python=3.10
+        conda install pytest pandas bioconda::biopython bioconda::pyranges packaging bioconda::scanpy pytest 
 
     - name: pytest
       run: |
-        conda activate pytest
         pip install .
         pytest
