@@ -3,7 +3,7 @@
 import tempfile
 import os
 import pandas as pd
-from pyroe import *
+from pyroe import ProcessedQuant, load_processed_quant
 import scanpy
 
 
@@ -15,8 +15,11 @@ def test_fetch_quant():
     tar_dir = os.path.join(output_dir.name, "quant_tar")
     expected_tar_path = os.path.join(tar_dir, f"{ds.dataset_id}.tar")
     quant_dir = os.path.join(output_dir.name)
-    expected_quant_path = os.path.join(quant_dir, str(ds.dataset_id), "_".join([ds.fastq_MD5sum, "fry_unfilt_quant_usa_cr-like"]))
-
+    expected_quant_path = os.path.join(
+        quant_dir,
+        str(ds.dataset_id),
+        "_".join([ds.fastq_MD5sum, "fry_unfilt_quant_usa_cr-like"]),
+    )
 
     # check fetched file existence
     assert ds.dataset_id == ds_22["dataset_id"]
@@ -33,5 +36,3 @@ def test_fetch_quant():
     assert os.path.exists(expected_tar_path)
     assert os.path.exists(expected_quant_path)
     assert isinstance(ds.anndata, scanpy.AnnData)
-
-
