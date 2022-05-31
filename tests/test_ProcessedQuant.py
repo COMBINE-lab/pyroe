@@ -53,7 +53,11 @@ def test_decompress_quant():
 
     quant_dir = os.path.join(output_dir.name, "processed_quant")
     quant_path_name = "test_ds22_quant_dir"
-    expected_quant_path = os.path.join(quant_dir, quant_path_name, "_".join([ds.fastq_MD5sum, "fry_unfilt_quant_usa_cr-like"]))
+    expected_quant_path = os.path.join(
+        quant_dir,
+        quant_path_name,
+        "_".join([ds.fastq_MD5sum, "fry_unfilt_quant_usa_cr-like"]),
+    )
 
     # check whether decompress_quant works
     ds.decompress_quant(quant_dir=quant_dir, quant_path_name=quant_path_name)
