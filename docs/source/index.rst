@@ -17,7 +17,7 @@ The pyroe package provides useful functions for analyzing single-cell or single-
 
    overview
    installing
-   commands
+   building_splici_index
    LICENSE.rst
 
 Indices and tables
