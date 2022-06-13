@@ -17,10 +17,11 @@ there is an additional layer named `unspliced` having just the unspliced counts,
 
 If you do not explicitly provide an ``--output-format``, the default of ``h5ad`` will be used.
 
-``convert` command full usage
+``convert`` command full usage
 -----------------------------
 
-.. code:: bash 
+.. code:: bash
+
   usage: pyroe convert [-h] [--output-structure OUTPUT_STRUCTURE] [--output-format OUTPUT_FORMAT] quant_dir output
 
   positional arguments:
