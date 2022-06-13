@@ -48,6 +48,7 @@ Full usage
 ----------
 
 .. code:: bash 
+
   usage: pyroe fetch-quant [-h] [--fetch_dir FETCH_DIR] [--force] [--delete_tar]
                            [--quiet]
                            dataset-ids [dataset-ids ...]
