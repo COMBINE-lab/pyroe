@@ -220,13 +220,13 @@ def process_output_format(output_format, quiet):
             output_format = output_format.lower()
             if output_format not in predefined_format.keys():
                 # invalid output_format string
-                if quiet:
+                if not quiet:
                     print(
                         "Provided output_format string must be 'scRNA', 'snRNA', 'raw' or 'velocity'."
                     )
                     print("See function help message for details.")
                 raise ValueError("Invalid output_format.")
-            if quiet:
+            if not quiet:
                 print("Using pre-defined output format:", output_format)
                 print(
                     f"Will populate output field X with sum of counts frorm {predefined_format[output_format]['X']}."
@@ -237,16 +237,17 @@ def process_output_format(output_format, quiet):
 
             return predefined_format[output_format]
         else:
-            if quiet:
+            if not quiet:
                 print("Processing user-defined output format.")
             # make sure the X is there
             if "X" not in output_format.keys():
                 raise ValueError(
                     'In USA mode some sub-matrices must be assigned to the "X" (default) output.'
                 )
-            print(
-                f"Will populate output field X with sum of counts frorm {output_format['X']}."
-            )
+            if not quiet:
+                print(
+                    f"Will populate output field X with sum of counts frorm {output_format['X']}."
+                )
 
             for (k, v) in output_format.items():
                 if not v:
@@ -261,7 +262,7 @@ def process_output_format(output_format, quiet):
                     raise ValueError(
                         f"Found non-USA element in output_format element list '{v}' for key '{k}'; cannot proceed."
                     )
-                if quiet and (k != "X"):
+                if not quiet and (k != "X"):
                     print(f"Will combine {v} into output layer {k}.")
 
             return output_format

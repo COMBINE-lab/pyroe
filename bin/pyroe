@@ -2,6 +2,7 @@
 
 from pyroe import make_splici_txome
 from pyroe import fetch_processed_quant
+from pyroe import convert
 
 if __name__ == "__main__":
     import argparse
@@ -40,6 +41,13 @@ if __name__ == "__main__":
     parser_fetchQuant.add_argument('--delete-tar', action='store_true', help='A flag indicates whether fetched tar files stored in the quant_tar directory under the provided fetch_dir should be deleted.')
     parser_fetchQuant.add_argument('--quiet', action='store_true', help='A flag indicates whether help messaged should not be printed.')
 
+    parser_convert = subparsers.add_parser('convert', help='Convert input .mtx format alevin-fry matrix to another format')
+    parser_convert.add_argument('quant_dir', metavar='quant_dir', type=str, help='The input quantification directory containing the matrix to be converted.')
+    parser_convert.add_argument('output', help='The output name where the quantification matrix should be written.')
+    parser_convert.add_argument('--output-structure', help='The structure that U,S and A counts should occupy in the output matrix.')
+    parser_convert.add_argument('--output-format', default='h5ad', help='The format in which the output should be written.')
+
+
     # Execute the parse_args() method
     args = parser.parse_args()
     if args.command == 'make-splici':
@@ -64,6 +72,8 @@ if __name__ == "__main__":
             delete_tar=args.delete_tar,
             quiet=args.quiet
         )
+    elif args.command == 'convert':
+        convert(args)
     else:
         print(parser.print_help())
         sys.exit(1)
