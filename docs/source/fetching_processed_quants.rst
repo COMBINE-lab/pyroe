@@ -44,8 +44,8 @@ or start python, and run
 
 
 
-Full usage
-----------
+``fetch-quant`` full usage
+--------------------------
 
 .. code:: bash 
 
