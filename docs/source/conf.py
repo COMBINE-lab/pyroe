@@ -17,9 +17,9 @@
 
 # -- Project information -----------------------------------------------------
 
-project = "alevin-fry"
-copyright = "2021-2022, Dongze He, Mohsen Zakeri, Hirak Sarkar, Charlotte Soneson, Avi Srivastava, Rob Patro"
-author = "Dongze He, Mohsen Zakeri, Hirak Sarkar, Charlotte Soneson, Avi Srivastava, Rob Patro"
+project = "pyroe"
+copyright = "2021-2022, Dongze He, Rob Patro"
+author = "Dongze He, Rob Patro"
 
 # The full version, including alpha/beta/rc tags
 release = "0.5.0"
