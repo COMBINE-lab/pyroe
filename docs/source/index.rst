@@ -15,7 +15,6 @@ The pyroe package provides useful functions for analyzing single-cell or single-
    :maxdepth: 2
    :caption: Contents:
 
-   overview
    installing
    building_splici_index
    fetching_processed_quants
