@@ -3,6 +3,10 @@ def say(quiet, words):
         print(words)
 
 
+def output_formats():
+    return set(["h5ad", "loom", "csvs", "zarr"])
+
+
 def check_dataset_ids(n_ds, dataset_ids):
     # check the validity of dataset_ids
     invalid_ids = []
