@@ -139,7 +139,7 @@ if __name__ == "__main__":
 
     out_formats = output_formats()
     parser_convert = subparsers.add_parser(
-        "convert", help="Convert input .mtx format alevin-fry matrix to another format."
+        "convert", help="Convert alevin-fry quantification result to another format."
     )
     parser_convert.add_argument(
         "quant_dir",
