@@ -5,7 +5,8 @@ The USA mode in alevin-fry requires a special index reference, which is called t
 
 Following is an example of calling the `pyroe` to make the *splici* index reference. The final flank length is calculated as the difference between the read length and the flank_trim_length, i.e., 5-2=3. This function allows you to add extra spliced and unspliced sequences to the *splici* index, which will be useful when some unannotated sequences, such as mitochondrial genes, are important for your experiment. **Note** : to make `pyroe` work more quickly, it is recommended to have the latest version of `bedtools <https://bedtools.readthedocs.io/en/latest/>`_ (`Aaron R. Quinlan and Ira M. Hall, 2010 <https://doi.org/10.1093/bioinformatics/btq033>`_) installed.
 
-.. code:: bash 
+.. code:: bash
+
   pyroe make-splici extdata/small_example_genome.fa extdata/small_example.gtf 5 splici_txome --flank-trim-length 2 --filename-prefix transcriptome_splici --dedup-seqs
         
         
