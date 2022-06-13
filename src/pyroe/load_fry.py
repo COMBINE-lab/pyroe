@@ -97,7 +97,7 @@ def load_fry(frydir, output_format="scRNA", nonzero=False, quiet=False):
     # first, check for the new file, if we don't find it, check
     # for the old one.
     if not os.path.exists(fpath):
-        if quiet:
+        if not quiet:
             print(
                 f"Did not find a {meta_info_files[0]} file, checking for older {meta_info_files[1]}."
             )
@@ -112,7 +112,7 @@ def load_fry(frydir, output_format="scRNA", nonzero=False, quiet=False):
     meta_info = json.load(open(fpath))
     ng = meta_info["num_genes"]
     usa_mode = meta_info["usa_mode"]
-    if quiet:
+    if not quiet:
         print(f"USA mode: {usa_mode}")
 
     # if we are in USA mode
@@ -122,7 +122,7 @@ def load_fry(frydir, output_format="scRNA", nonzero=False, quiet=False):
         # genes is ng/3.
         ng = int(ng / 3)
         output_assays = process_output_format(output_format, quiet)
-    elif quiet:
+    elif not quiet:
         print(
             "Processing input in standard mode, the count matrix will be stored in field 'X'."
         )
@@ -188,7 +188,7 @@ def load_fry(frydir, output_format="scRNA", nonzero=False, quiet=False):
 
         af = af[:, not_zero_genes]
 
-        if quiet:
+        if not quiet:
             print(f"Filtered {np.sum(~not_zero_genes)} non-expressed genes.")
 
     return af

@@ -6,8 +6,9 @@
 
 The `pyroe` package provides useful functions for analyzing single-cell or single-nucleus RNA-sequencing data using `alevin-fry`, which consists of
 
-1. preparing the *splici* reference for the `USA` mode of `alevin-fry`, which will export a unspliced, a spliced, and an ambiguous molecule count for each gene within each cell.
-2. fetching and loading the preprocessed quantification results of `alevin-fry` into python as an [`AnnData`](https://anndata.readthedocs.io/en/latest/) object.
+1. Preparing the *splici* reference for the `USA` mode of `alevin-fry`, which will export a unspliced, a spliced, and an ambiguous molecule count for each gene within each cell.
+2. Fetching and loading the preprocessed quantification results of `alevin-fry` into python as an [`AnnData`](https://anndata.readthedocs.io/en/latest/) object.
+3. Converting the `mtx` format output of `alevin-fry` (specifically in USA mode) to other formats, such as the `AnnData` native [`h5ad` format](https://anndata.readthedocs.io/en/latest/generated/anndata.read_h5ad.html#anndata.read_h5ad).
 
 ## Installation
 The `pyroe` package can be accessed from its [github repository](https://github.com/COMBINE-lab/pyroe), installed via [`pip`](https://pip.pypa.io/en/stable/). To install the `pyroe` package via `pip` use the command:
@@ -118,7 +119,7 @@ nonzero : `bool` (default: `False`)
     True if cells with non-zero expression value across all genes should be filtered in each layer.
     False if unexpressed genes should be kept.
 
-#### Notes
+#### `load_fry` Notes
 
 The `output_format` argument takes either a dictionary that defines the customized format or 
 a string that represents one of the pre-defined format of the returned `AnnData` object.
@@ -274,3 +275,9 @@ Besides, we have some helper function for printing and loading the information o
 
 - `ProcessedQuant.get_available_dataset_df()` returns the detail of available datasets as a pandas dataframe.
 - `ProcessedQuant.print_available_datasets()` prints the index and name of the available datasets.
+
+## Converting quantification results
+
+The `convert` sub-command of `pyroe` can convert the output of `alevin-fry` into several common formats, such as 
+the native `AnnData` format (`h5ad`).  Further, when performing this conversion, it can organize the unspliced, 
+spliced, and ambiguous counts as desired by the user.

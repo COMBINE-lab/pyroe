@@ -1,5 +1,6 @@
 from .load_fry import load_fry
 from .load_fry import process_output_format
+from .pyroe_utils import output_formats
 
 
 def validate_convert_args(args):
@@ -12,7 +13,7 @@ def validate_convert_args(args):
     import ast
     import sys
 
-    output_fmt = set(["h5ad", "loom", "csvs", "zarr"])
+    output_fmt = output_formats()
     if args.output_format not in output_fmt:
         print(f"The output format {args.output_format} was invalid")
 
@@ -33,9 +34,13 @@ def validate_convert_args(args):
 
 
 def convert(args):
+    # first make sure that the input is such that
+    # the conversion makes sense
     validate_convert_args(args)
+    # offload the work of loading the input to `load_fry`
     A = load_fry(args.quant_dir, output_format=args.output_structure, quiet=True)
 
+    # write the output in the requested format
     output_fn = {
         "h5ad": A.write,
         "loom": A.write_loom,
