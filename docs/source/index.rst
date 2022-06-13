@@ -12,6 +12,7 @@ The pyroe package provides useful functions for analyzing single-cell or single-
 
    installing
    building_splici_index
+   processing_fry_quants
    fetching_processed_quants
    converting_quants
    LICENSE.rst
