@@ -18,7 +18,7 @@ there is an additional layer named `unspliced` having just the unspliced counts,
 If you do not explicitly provide an ``--output-format``, the default of ``h5ad`` will be used.
 
 ``convert`` command full usage
------------------------------
+------------------------------
 
 .. code:: bash
 
