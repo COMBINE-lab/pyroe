@@ -9,7 +9,7 @@ The sub-command takes as input a quantification directory produced by ``alevin-f
 Additionally, the user should pass in command line parameters to describe the desired output structure, and
 output format. The output structure defines how the ``U``, ``S``, and ``A`` layers of the input quantification should
 be represented in the converted matrix.  The syntax for this flag exactly mimics the ``output_format`` argument of
-the ``load_fry`` function, which you can read about `here <https://github.com/COMBINE-lab/pyroe#load_fry-notes>`_.
+the ``load_fry`` function, which you can read about `here <https://pyroe.readthedocs.io/en/latest/building_splici_index.html#load-fry-notes>`_.
 Note that, if you pass in a custom output structure, you should enclose your format description in quotes.  For
 example, to output to an object where the "main" layer (``X``) contains the sum of ``U``, ``S``, and ``A``, and where
 there is an additional layer named `unspliced` having just the unspliced counts, you would pass
