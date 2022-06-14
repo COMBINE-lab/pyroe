@@ -152,6 +152,11 @@ if __name__ == "__main__":
         "output",
         help="The path to where the output tsv file will be written."
     )
+    parser_id_to_name.add_argument(
+        "--format",
+        help="The input format of the file (must be either GTF or GFF3). This will be inferred from the filename, but if that fails it can be provided explicitly.",
+        default=None
+    )
 
     out_formats = output_formats()
     parser_convert = subparsers.add_parser(
