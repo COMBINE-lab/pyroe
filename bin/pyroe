@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+import logging
+
 from pyroe import make_splici_txome
 from pyroe import fetch_processed_quant
 from pyroe import convert
@@ -160,6 +162,14 @@ if __name__ == "__main__":
         default="h5ad",
         help=f"The format in which the output should be written, one of {out_formats}.",
     )
+    parser_convert.add_argument(
+        "--geneid-to-name",
+        type=str,
+        required=False,
+        help="A 2 column tab-separated list of gene ID to gene name mappings. Providing this file will project gene IDs to gene names in the output."
+    )
+
+    logging.basicConfig(level=logging.INFO)
 
     # Execute the parse_args() method
     args = parser.parse_args()
