@@ -14,6 +14,7 @@ The pyroe package provides useful functions for analyzing single-cell or single-
    building_splici_index
    processing_fry_quants
    fetching_processed_quants
+   geneid_to_name
    converting_quants
    LICENSE.rst
 
