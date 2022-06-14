@@ -17,6 +17,11 @@ there is an additional layer named `unspliced` having just the unspliced counts,
 
 If you do not explicitly provide an ``--output-format``, the default of ``h5ad`` will be used.
 
+The *optional* ``--geneid-to-name`` parameter allows you to pass in a 2-column tab-separated filed mapping gene identifiers to gene names.
+If this is provided, then gene IDs will be converted to gene names in the output matrix.  Gene names will be made unique using the ``var_names_make_unique()`` function of `ScanPy <https://scanpy-tutorials.readthedocs.io/en/latest/index.html>`_.
+It is also possible that some gene IDs do not have a mapped name.  In this case, the ``convert`` subcommand will also write out a JSON format file, at the provided output path, with the additional suffix ``_unmapped_ids.json``.
+This file contains a list of the gene IDs that could not successfully be mapped to a name given the provided mapping.
+
 ``convert`` command full usage
 ------------------------------
 
