@@ -22,7 +22,7 @@ If you do not explicitly provide an ``--output-format``, the default of ``h5ad``
 
 .. code:: bash
 
-  usage: pyroe convert [-h] [--output-structure OUTPUT_STRUCTURE] [--output-format OUTPUT_FORMAT] quant_dir output
+  usage: pyroe convert [-h] [--output-structure OUTPUT_STRUCTURE] [--output-format OUTPUT_FORMAT] [--geneid-to-name GENEID_TO_NAME] quant_dir output
 
   positional arguments:
     quant_dir             The input quantification directory containing the matrix to be converted.
@@ -33,4 +33,6 @@ If you do not explicitly provide an ``--output-format``, the default of ``h5ad``
     --output-structure OUTPUT_STRUCTURE
                           The structure that U,S and A counts should occupy in the output matrix.
     --output-format OUTPUT_FORMAT
-                          The format in which the output should be written, one of {'loom', 'h5ad', 'zarr', 'csvs'}.
+                          The format in which the output should be written, one of {'zarr', 'loom', 'csvs', 'h5ad'}.
+    --geneid-to-name GENEID_TO_NAME
+                          A 2 column tab-separated list of gene ID to gene name mappings. Providing this file will project gene IDs to gene names in the output.
