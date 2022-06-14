@@ -5,6 +5,7 @@ import logging
 from pyroe import make_splici_txome
 from pyroe import fetch_processed_quant
 from pyroe import convert
+from pyroe import id_to_name
 from pyroe import output_formats
 
 if __name__ == "__main__":
@@ -139,6 +140,19 @@ if __name__ == "__main__":
         help="A flag indicates whether help messaged should not be printed.",
     )
 
+
+    parser_id_to_name = subparsers.add_parser(
+        "id-to-name", help="Generate a gene id to gene name mapping file from a GTF."
+    )
+    parser_id_to_name.add_argument(
+        "gtf_file",
+        help="The GTF input file."
+    )
+    parser_id_to_name.add_argument(
+        "output",
+        help="The path to where the output tsv file will be written."
+    )
+
     out_formats = output_formats()
     parser_convert = subparsers.add_parser(
         "convert", help="Convert alevin-fry quantification result to another format."
@@ -198,6 +212,8 @@ if __name__ == "__main__":
         )
     elif args.command == "convert":
         convert(args)
+    elif args.command == "id-to-name":
+        id_to_name(args)
     else:
         print(parser.print_help())
         sys.exit(1)
