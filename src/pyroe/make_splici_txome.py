@@ -91,7 +91,7 @@ def make_splici_txome(
     dedup_seqs=False,
     no_bt=False,
     bt_path="bedtools",
-    no_flanking_merge=False,
+    no_flanking_merge=False
 ):
     """
     Construct the splici (spliced + introns) transcriptome for alevin-fry.
@@ -350,7 +350,7 @@ def make_splici_txome(
                         "-bed",
                         temp_bed,
                         # "-s",
-                        "-nameOnly",
+                        "-nameOnly"
                     ]
                 ),
                 shell=True,
@@ -364,12 +364,12 @@ def make_splici_txome(
             # parse temp fasta file to concat exons of each transcript
             ei_parser = SeqIO.parse(temp_fa, "fasta")
             prev_rec = next(ei_parser)
-            prev_rec.id = prev_rec.id.split("(")[0]
+            # prev_rec.id = prev_rec.id.split("(")[0]
             prev_rec.description = ""
             with open(out_fa, "w") as out_handle:
 
                 for seq_record in ei_parser:
-                    seq_record.id = seq_record.id.split("(")[0]
+                    # seq_record.id = seq_record.id.split("(")[0]
                     seq_record.description = ""
                     if seq_record.id == prev_rec.id:
                         prev_rec += seq_record
