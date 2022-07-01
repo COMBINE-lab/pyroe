@@ -6,8 +6,9 @@
 
 The `pyroe` package provides useful functions for analyzing single-cell or single-nucleus RNA-sequencing data using `alevin-fry`, which consists of
 
-1. preparing the *splici* reference for the `USA` mode of `alevin-fry`, which will export a unspliced, a spliced, and an ambiguous molecule count for each gene within each cell.
-2. fetching and loading the preprocessed quantification results of `alevin-fry` into python as an [`AnnData`](https://anndata.readthedocs.io/en/latest/) object.
+1. Preparing the *splici* reference for the `USA` mode of `alevin-fry`, which will export a unspliced, a spliced, and an ambiguous molecule count for each gene within each cell.
+2. Fetching and loading the preprocessed quantification results of `alevin-fry` into python as an [`AnnData`](https://anndata.readthedocs.io/en/latest/) object.
+3. Converting the `mtx` format output of `alevin-fry` (specifically in USA mode) to other formats, such as the `AnnData` native [`h5ad` format](https://anndata.readthedocs.io/en/latest/generated/anndata.read_h5ad.html#anndata.read_h5ad).
 
 ## Installation
 The `pyroe` package can be accessed from its [github repository](https://github.com/COMBINE-lab/pyroe), installed via [`pip`](https://pip.pypa.io/en/stable/). To install the `pyroe` package via `pip` use the command:
@@ -118,7 +119,7 @@ nonzero : `bool` (default: `False`)
     True if cells with non-zero expression value across all genes should be filtered in each layer.
     False if unexpressed genes should be kept.
 
-#### Notes
+#### `load_fry` Notes
 
 The `output_format` argument takes either a dictionary that defines the customized format or 
 a string that represents one of the pre-defined format of the returned `AnnData` object.
@@ -274,3 +275,38 @@ Besides, we have some helper function for printing and loading the information o
 
 - `ProcessedQuant.get_available_dataset_df()` returns the detail of available datasets as a pandas dataframe.
 - `ProcessedQuant.print_available_datasets()` prints the index and name of the available datasets.
+
+## Converting quantification results
+
+The `convert` sub-command of `pyroe` can convert the output of `alevin-fry` into several common formats, such as 
+the native `AnnData` format (`h5ad`).  Further, when performing this conversion, it can organize the unspliced, 
+spliced, and ambiguous counts as desired by the user.
+
+The sub-command takes as input a quantification directory produced by `alevin-fry`, and an output location.
+Additionally, the user should pass in command line parameters to describe the desired output structure, and
+output format. The output structure defines how the `U`, `S`, and `A` layers of the input quantification should
+be represented in the converted matrix.  The syntax for this flag exactly mimics the `output_format` argument of
+the `load_fry` function, which you can read about [here](https://github.com/COMBINE-lab/pyroe#load_fry-notes).
+Note that, if you pass in a custom output structure, you should enclose your format description in quotes.  For
+example, to output to an object where the "main" layer (`X`) contains the sum of `U`, `S`, and `A`, and where
+there is an additional layer named `unspliced` having just the unspliced counts, you would pass
+`--output-structure '{ "X" : ["U", "S", "A"], "unspliced" : ["U"]}'`. 
+
+If you do not explicitly provide an `--output-format`, the default of `h5ad` will be used.
+
+#### `convert` command full usage
+
+```
+usage: pyroe convert [-h] [--output-structure OUTPUT_STRUCTURE] [--output-format OUTPUT_FORMAT] quant_dir output
+
+positional arguments:
+  quant_dir             The input quantification directory containing the matrix to be converted.
+  output                The output name where the quantification matrix should be written. For `csvs` output format, this will be a directory. For all others, it will be a file.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --output-structure OUTPUT_STRUCTURE
+                        The structure that U,S and A counts should occupy in the output matrix.
+  --output-format OUTPUT_FORMAT
+                        The format in which the output should be written, one of {'loom', 'h5ad', 'zarr', 'csvs'}.
+```
