@@ -91,7 +91,7 @@ def make_splici_txome(
     dedup_seqs=False,
     no_bt=False,
     bt_path="bedtools",
-    no_flanking_merge=False
+    no_flanking_merge=False,
 ):
     """
     Construct the splici (spliced + introns) transcriptome for alevin-fry.
@@ -350,7 +350,7 @@ def make_splici_txome(
                         "-bed",
                         temp_bed,
                         # "-s",
-                        "-nameOnly"
+                        "-nameOnly",
                     ]
                 ),
                 shell=True,
