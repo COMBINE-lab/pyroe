@@ -12,12 +12,14 @@ if __name__ == "__main__":
     import argparse
     import sys
     from argparse import RawTextHelpFormatter
+    from pyroe import __version__
 
     # Create the parser
     parser = argparse.ArgumentParser(
         description="The pyroe package provides useful functions to support alevin-fry ecosystem.",
         prog="pyroe",
     )
+    parser.add_argument("-v", "--version", action="version", version=f"pyroe {__version__}")
     subparsers = parser.add_subparsers(
         title="subcommands",
         dest="command",
