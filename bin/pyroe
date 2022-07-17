@@ -12,11 +12,15 @@ if __name__ == "__main__":
     import argparse
     import sys
     from argparse import RawTextHelpFormatter
+    from pyroe import __version__
 
     # Create the parser
     parser = argparse.ArgumentParser(
         description="The pyroe package provides useful functions to support alevin-fry ecosystem.",
         prog="pyroe",
+    )
+    parser.add_argument(
+        "-v", "--version", action="version", version=f"pyroe {__version__}"
     )
     subparsers = parser.add_subparsers(
         title="subcommands",
@@ -140,22 +144,17 @@ if __name__ == "__main__":
         help="A flag indicates whether help messaged should not be printed.",
     )
 
-
     parser_id_to_name = subparsers.add_parser(
         "id-to-name", help="Generate a gene id to gene name mapping file from a GTF."
     )
+    parser_id_to_name.add_argument("gtf_file", help="The GTF input file.")
     parser_id_to_name.add_argument(
-        "gtf_file",
-        help="The GTF input file."
-    )
-    parser_id_to_name.add_argument(
-        "output",
-        help="The path to where the output tsv file will be written."
+        "output", help="The path to where the output tsv file will be written."
     )
     parser_id_to_name.add_argument(
         "--format",
         help="The input format of the file (must be either GTF or GFF3). This will be inferred from the filename, but if that fails it can be provided explicitly.",
-        default=None
+        default=None,
     )
 
     out_formats = output_formats()
@@ -185,7 +184,7 @@ if __name__ == "__main__":
         "--geneid-to-name",
         type=str,
         required=False,
-        help="A 2 column tab-separated list of gene ID to gene name mappings. Providing this file will project gene IDs to gene names in the output."
+        help="A 2 column tab-separated list of gene ID to gene name mappings. Providing this file will project gene IDs to gene names in the output.",
     )
 
     logging.basicConfig(level=logging.INFO)
