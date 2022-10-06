@@ -107,14 +107,14 @@ def check_gr(gr, output_dir, write_clean_gtf):
     # If required fields are missing, quit
     if "transcript_id" not in gr.columns:
         raise ValueError(
-            f"The input GTF file doesn't contain transcript_id field; Cannot proceed."
+            "The input GTF file doesn't contain transcript_id field; Cannot proceed."
         )
 
     if "gene_id" not in gr.columns:
         # use gene_name as gene_id if exists, return an error otherwise
         if "gene_name" not in gr.columns:
             raise ValueError(
-                f"The input GTF file doesn't contain gene_id and gene_name field; Cannot proceed."
+                "The input GTF file doesn't contain gene_id and gene_name field; Cannot proceed."
             )
         else:
             warnings.warn("gene_id field does not exist, use gene_name instead.")
@@ -138,7 +138,7 @@ def check_gr(gr, output_dir, write_clean_gtf):
         )
 
     # Impute missing gene_id and gene_name values
-    ## define an object
+    # define an object
     num_nan = gr.df[["gene_id", "gene_name"]].isnull().sum(axis=1)
 
     if num_nan.sum():
@@ -163,7 +163,7 @@ def check_gr(gr, output_dir, write_clean_gtf):
             double_missing_msg = ""
 
         # If one field is missing, impute using the other
-        ## missing only gene_id
+        # missing only gene_id
         gene_id_missing = gene_df["gene_id"].isnull()
         if gene_id_missing.sum():
             gene_df.loc[gene_df["gene_id"].isnull(), "gene_id"] = gene_df.loc[
