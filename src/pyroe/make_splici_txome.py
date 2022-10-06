@@ -78,6 +78,108 @@ def dedup_sequences(output_dir, in_fa, out_fa):
             rec = SeqRecord(Seq(k), id=v[0], description="")
             SeqIO.write(rec, ofile, "fasta")
 
+def check_gr(gr, output_dir, write_clean_gtf):
+    """
+    This function checks the validity of a PyRanges object.
+    It will follow these rules:
+    1. For gene type records, gene_id and gene_name cannot be both missing.
+    2. All other types of records have to have a valid (not NaN) transcript_id.
+    3. For all types of records other than gene type,  
+        - If the gene_id and gene_name are both missing, then the transcript_id
+    will be used to impute them.
+        - If one of gene_id and gene_name is missing, then the other will be 
+    used to impute the missing one. 
+
+    Args:
+        gr (pyranges): Stranded PyRanges object
+    """
+    
+    import pandas as pd
+    import os
+    import warnings
+
+    # split gene type records with others
+    # we don't use gene records in splici construction
+    # gene_gr = gr[gr.Feature == "gene"]
+    gr = gr[gr.Feature != "gene"]
+
+    # If required fields are missing, quit
+    if("transcript_id" not in gr.columns):
+        raise ValueError(f"The input GTF file doesn't contain transcript_id field; Cannot proceed.")
+
+    if("gene_id" not in gr.columns):
+        # use gene_name as gene_id if exists, return an error otherwise
+        if("gene_name" not in gr.columns):
+            raise ValueError(f"The input GTF file doesn't contain gene_id and gene_name field; Cannot proceed.")
+        else:
+            warnings.warn("gene_id field does not exist, use gene_name instead.")
+            gene_id = pd.Series(data = gr.gene_name, name="gene_id")
+            gr = gr.insert(gene_id)
+
+    # If there is any NaN in transcript_id field, quit
+    if (sum(gr.transcript_id.isnull())):
+
+        clean_gtf_msg = ""
+        # first, write an clean GTF if needed
+        if write_clean_gtf:
+            clean_gtf_path = os.path.join(output_dir, "clean_gtf.gtf")
+            gr[gr.transcript_id.notnull()].to_gtf(clean_gtf_path)
+            clean_gtf_msg = f"An clean GTF file is written to {clean_gtf_path}."
+        else:
+            clean_gtf_msg = "Set the write_clean_gtf flag if a clean GTF without the invalid records is needed."
+        # Then, raise a value error
+        raise ValueError(f"Found NaN value in exons' transcript ID; Cannot proceed.\n{clean_gtf_msg}")
+
+    # Impute missing gene_id and gene_name values
+    ## define an object
+    num_nan = gr.df[["gene_id", "gene_name"]].isnull().sum(axis=1)
+
+    if (num_nan.sum()):
+        
+        # create intermediate df
+        gene_df = gr.df[["gene_id", "gene_name"]]
+
+        # Firstly, write the problematic records to a file before imputation
+        problematic_gtf_path = os.path.join(output_dir, "missing_gene_id_or_name_records.gtf")
+        gr[num_nan > 0].to_gtf(problematic_gtf_path)
+        missing_record_msg=f"\nFound records with missing gene_id/gene_name field.\nThese records are reported in {problematic_gtf_path}."
+
+        # impute using transcript_id
+        double_missing = num_nan == 2
+        if double_missing.sum():
+            gene_df.loc[num_nan == 2, "gene_id"] = gr.transcript_id[num_nan == 2]
+            gene_df.loc[num_nan == 2, "gene_name"] = gr.transcript_id[num_nan == 2]
+            double_missing_msg = f"\n  - Found {(num_nan == 2).sum()} records missing gene_id and gene_name, imputing using transcript_id."
+        else:
+            double_missing_msg = ""
+
+        # If one field is missing, impute using the other
+        ## missing only gene_id
+        gene_id_missing = gene_df["gene_id"].isnull()
+        if gene_id_missing.sum():
+            gene_df.loc[gene_df["gene_id"].isnull(), "gene_id"] = gene_df.loc[gene_df["gene_id"].isnull(), "gene_name"]
+            gene_id_missing_msg = f"\n  - Found {gene_id_missing.sum()} records missing gene_id, imputing using gene_name."
+        else:
+            gene_id_missing_msg = ""
+
+        gene_name_missing = gene_df["gene_name"].isnull()
+        if gene_name_missing.sum():
+            gene_df.loc[gene_df["gene_name"].isnull(), "gene_name"] = gene_df.loc[gene_df["gene_name"].isnull(), "gene_id"]
+            gene_name_missing_msg = f"\n  - Found {gene_name_missing.sum()} records missing gene_name, imputing using gene_id."
+        else:
+            gene_name_missing_msg = ""
+
+        # write the warning message
+        warnings.warn("".join([missing_record_msg, double_missing_msg, gene_id_missing_msg, gene_name_missing_msg]))
+
+        # replace the old gene_id and gene_name fields using imputed one.
+        gr = gr.drop(["gene_id", "gene_name"])
+        gr = gr.insert(gene_df)
+        # if gene_gr is used in the future, then concat them.
+        # gr = pr.concat([gr, gene_gr]) 
+
+    # return imputed gr
+    return(gr)
 
 def make_splici_txome(
     genome_path,
@@ -92,6 +194,7 @@ def make_splici_txome(
     no_bt=False,
     bt_path="bedtools",
     no_flanking_merge=False,
+    write_clean_gtf=False
 ):
     """
     Construct the splici (spliced + introns) transcriptome for alevin-fry.
@@ -114,13 +217,12 @@ def make_splici_txome(
     Optional Parameters
     ----------
 
-    flank_trim_length : int
+    flank_trim_length : int (default: `5`)
         The flank trimming length.
         The final flank length is obtained by subtracting
         the flank_trim_length from the read_length.
 
-
-    filename_prefix : str
+    filename_prefix : str (default: `splici`)
         The file name prefix of the generated output files.
         The derived flank length will be automatically
         appended to the provided prefix.
@@ -133,19 +235,26 @@ def make_splici_txome(
         The path to a fasta file. The records in this fasta file will be
         regarded as introns.
 
-    dedup_seqs : bool
+    dedup_seqs : bool  (default: `False`)
         If True, the repeated sequences in the splici reference will be
         deduplicated.
 
-    no_bt : bool
+    no_bt : bool (default: `False`)
         If true, biopython, instead of bedtools, will be used for
         generating splici reference files.
 
     bt_path : str
         The path to bedtools v2.30.0 or greater if it is not in the environment PATH.
 
-    no_flanking_merge : bool
+    no_flanking_merge : bool (default: `False`)
         If true, overlapping introns caused by the added flanking length will not be merged.
+
+    write_clean_gtf : bool (default: `False`)
+        If true, when the input GTF contains invalid records, a clean GTF 
+        file `clean_gtf.gtf` with these invalid records removed will be 
+        exported to the output dir. 
+        An invalid record is an exon record without an transcript ID
+        in the `transcript_id` field.
 
 
     Returns
@@ -156,7 +265,7 @@ def make_splici_txome(
     Notes
     -----
     * If using bedtools, a temp.bed and a temp.fa will be created and
-        then deleted. These two files encodes the introns of each gene
+        then deleted. These two files encode the introns of each gene
         and the exons of each transcript of each gene.
 
     """
@@ -250,9 +359,16 @@ def make_splici_txome(
     filename_prefix = filename_prefix + "_fl" + str(flank_length)
     out_fa = os.path.join(output_dir, filename_prefix + ".fa")
     out_t2g3col = os.path.join(output_dir, filename_prefix + "_t2g_3col.tsv")
+    id2name_path = os.path.join(output_dir, 'gene_name_to_id.tsv')
 
     # load gtf
     gr = pr.read_gtf(gtf_path)
+    
+    # check the validity of gr
+    gr = check_gr(gr, output_dir, write_clean_gtf)
+
+    # write gene id to name tsv file
+    gr.df[["gene_id", "gene_name"]].drop_duplicates().to_csv(id2name_path, sep="\t", header=False, index=False)
 
     # get introns
     # the introns() function uses inplace=True argument from pandas,
@@ -386,9 +502,9 @@ def make_splici_txome(
                     prev_rec = prev_rec.reverse_complement(id=True, description=True)
                 SeqIO.write(prev_rec, out_handle, "fasta")
             shutil.rmtree(temp_dir, ignore_errors=True)
-        except subprocess.CalledProcessError:
+        except subprocess.CalledProcessError as err:
             no_bt = True
-            warnings.warn("Bedtools failed, use biopython instead.")
+            warnings.warn(f"Bedtools failed with message:\n{err}\n Use biopython instead.")
             shutil.rmtree(temp_dir, ignore_errors=True)
 
     if no_bt:
