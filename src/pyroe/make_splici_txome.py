@@ -97,7 +97,7 @@ def check_gr(gr, output_dir, write_clean_gtf):
 
     import pandas as pd
     import os
-    import pyranges as pr
+    # import pyranges as pr
     import warnings
 
     # split gene type records with others
