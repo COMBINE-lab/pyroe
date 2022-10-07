@@ -19,5 +19,6 @@ jobs:
 
     - name: pytest
       run: |
+        conda activate pyroe
         pip install .
         pytest
