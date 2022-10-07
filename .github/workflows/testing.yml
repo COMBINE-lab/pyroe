@@ -15,10 +15,9 @@ jobs:
         echo $CONDA/bin >> $GITHUB_PATH
     - name: Install dependencies
       run: |
-        conda create -n pyroe python=3.9 conda-forge::biopython bioconda::pyranges=0.0.115 packaging bioconda::scanpy pytest -y
+        conda install --name base python=3.9 conda-forge::biopython bioconda::pyranges=0.0.115 packaging bioconda::scanpy pytest -y
 
     - name: pytest
       run: |
-        conda activate pyroe
         pip install .
         pytest
