@@ -117,9 +117,14 @@ def check_gr(gr, output_dir, write_clean_gtf):
                 "The input GTF file doesn't contain gene_id and gene_name field; Cannot proceed."
             )
         else:
-            warnings.warn("gene_id field does not exist, use gene_name instead.")
+            warnings.warn("gene_id field does not exist, use gene_name as gene_id.")
             gene_id = pd.Series(data=gr.gene_name, name="gene_id")
             gr = gr.insert(gene_id)
+
+    if "gene_name" not in gr.columns:
+        warnings.warn("gene_name field does not exist, use gene_id as gene_name.")
+        gene_name = pd.Series(data=gr.gene_id, name="gene_name")
+        gr = gr.insert(gene_name)
 
     # If there is any NaN in transcript_id field, quit
     if sum(gr.transcript_id.isnull()):
