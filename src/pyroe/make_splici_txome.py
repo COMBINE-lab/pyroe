@@ -97,11 +97,12 @@ def check_gr(gr, output_dir, write_clean_gtf):
 
     import pandas as pd
     import os
+    import pyranges as pr
     import warnings
 
     # split gene type records with others
     # we don't use gene records in splici construction
-    # gene_gr = gr[gr.Feature == "gene"]
+    gene_gr = gr[gr.Feature == "gene"]
     gr = gr[gr.Feature != "gene"]
 
     # If required fields are missing, quit
@@ -129,11 +130,11 @@ def check_gr(gr, output_dir, write_clean_gtf):
     # If there is any NaN in transcript_id field, quit
     if sum(gr.transcript_id.isnull()):
 
-        clean_gtf_msg = ""
         # first, write an clean GTF if needed
         if write_clean_gtf:
             clean_gtf_path = os.path.join(output_dir, "clean_gtf.gtf")
-            gr[gr.transcript_id.notnull()].to_gtf(clean_gtf_path)
+            gr = pr.concat([gene_gr, gr[gr.transcript_id.notnull()]])
+            gr.to_gtf(clean_gtf_path)
             clean_gtf_msg = f"An clean GTF file is written to {clean_gtf_path}."
         else:
             clean_gtf_msg = "Set the write_clean_gtf flag if a clean GTF without the invalid records is needed."
