@@ -16,7 +16,7 @@ jobs:
     - name: Install dependencies
       run: |
         conda install -n base conda-forge::mamba python=3.9 
-        conda install conda-forge::biopython bioconda::pyranges packaging bioconda::scanpy pytest -y
+        conda install conda-forge::biopython bioconda::pyranges=0.0.115 packaging bioconda::scanpy pytest -y
 
     - name: pytest
       run: |
