@@ -106,7 +106,6 @@ def check_gr(gr, output_dir, write_clean_gtf):
     gr = gr[gr.Feature != "gene"]
     clean_gtf_path = os.path.join(output_dir, "clean_gtf.gtf")
 
-
     # If required fields are missing, quit
     if "transcript_id" not in gr.columns:
         raise ValueError(
@@ -348,8 +347,9 @@ def make_splici_txome(
             found_ver = parse_version(vstr)
             req_ver = parse_version("2.30.0")
             return found_ver >= req_ver
-        except subprocess.CalledProcessError:
+        except subprocess.CalledProcessError as err:
             # in this case couldn't even run subprocess
+            warnings.warn(f"Cannot check bedtools version.\n{err}")
             return False
 
     # check bedtools
@@ -399,6 +399,14 @@ def make_splici_txome(
     id2name_path = os.path.join(output_dir, "gene_name_to_id.tsv")
 
     # load gtf
+    try:
+        gr = pr.read_gtf(gtf_path)
+    except ValueError:
+        # in this case couldn't even run subprocess
+        raise RuntimeError(
+            "PyRanges failed to parse the input GTF file. Please check the PyRanges documentation for the expected GTF format constraints.\nhttps://pyranges.readthedocs.io/en/latest/autoapi/pyranges/readers/index.html?highlight=read_gtf#pyranges.readers.read_gtf"
+        )
+
     gr = pr.read_gtf(gtf_path)
 
     # check the validity of gr
@@ -544,7 +552,7 @@ def make_splici_txome(
         except subprocess.CalledProcessError as err:
             no_bt = True
             warnings.warn(
-                f"Bedtools failed with message:\n{err}\n Use biopython instead."
+                f"Bedtools failed with message:\n{err}\nUse biopython instead."
             )
             shutil.rmtree(temp_dir, ignore_errors=True)
 
