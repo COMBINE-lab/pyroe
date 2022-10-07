@@ -9,7 +9,7 @@ from .pyroe_utils import output_formats
 def validate_convert_args(args):
     """
     Perform validation of the arguments for the covert sub-command.
-    This will e.g. make sure that the input exists, that the ouput
+    This will e.g. make sure that the input exists, that the output
     format is supported, and that the `output-structure` option makes
     sense as parsed.
     """
