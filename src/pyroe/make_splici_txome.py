@@ -97,13 +97,14 @@ def check_gr(gr, output_dir, write_clean_gtf):
 
     import pandas as pd
     import os
-    # import pyranges as pr
+    import pyranges as pr
     import warnings
 
     # split gene type records with others
     # we don't use gene records in splici construction
-    # gene_gr = gr[gr.Feature == "gene"]
+    gene_gr = gr[gr.Feature == "gene"]
     gr = gr[gr.Feature != "gene"]
+    clean_gtf_path = os.path.join(output_dir, "clean_gtf.gtf")
 
     # If required fields are missing, quit
     if "transcript_id" not in gr.columns:
@@ -132,10 +133,9 @@ def check_gr(gr, output_dir, write_clean_gtf):
 
         # first, write an clean GTF if needed
         if write_clean_gtf:
-            clean_gtf_path = os.path.join(output_dir, "clean_gtf.gtf")
-            # gr = pr.concat([gene_gr, gr[gr.transcript_id.notnull()]])
-            # gr.to_gtf(clean_gtf_path)
-            gr[gr.transcript_id.notnull()].to_gtf(clean_gtf_path)
+            gr = pr.concat([gene_gr, gr[gr.transcript_id.notnull()]])
+            gr.to_gtf(clean_gtf_path)
+            # gr[gr.transcript_id.notnull()].to_gtf(clean_gtf_path)
             clean_gtf_msg = f"An clean GTF file is written to {clean_gtf_path}."
         else:
             clean_gtf_msg = "Set the write_clean_gtf flag if a clean GTF without the invalid records is needed."
@@ -205,7 +205,13 @@ def check_gr(gr, output_dir, write_clean_gtf):
         gr = gr.drop(["gene_id", "gene_name"])
         gr = gr.insert(gene_df)
         # if gene_gr is used in the future, then concat them.
-        # gr = pr.concat([gr, gene_gr])
+        if write_clean_gtf:
+            clean_gr = pr.concat([gene_gr, gr])
+            clean_gr.to_gtf(clean_gtf_path)
+            clean_gtf_msg = f"An clean GTF file is written to {clean_gtf_path}."
+            print(clean_gtf_msg)
+
+            # gr = pr.concat([gr, gene_gr])
 
     # return imputed gr
     return gr
@@ -341,8 +347,9 @@ def make_splici_txome(
             found_ver = parse_version(vstr)
             req_ver = parse_version("2.30.0")
             return found_ver >= req_ver
-        except subprocess.CalledProcessError:
+        except subprocess.CalledProcessError as err:
             # in this case couldn't even run subprocess
+            warnings.warn(f"Cannot check bedtools version.\n{err}")
             return False
 
     # check bedtools
@@ -392,6 +399,14 @@ def make_splici_txome(
     id2name_path = os.path.join(output_dir, "gene_name_to_id.tsv")
 
     # load gtf
+    try:
+        gr = pr.read_gtf(gtf_path)
+    except ValueError:
+        # in this case couldn't even run subprocess
+        raise RuntimeError(
+            "PyRanges failed to parse the input GTF file. Please check the PyRanges documentation for the expected GTF format constraints.\nhttps://pyranges.readthedocs.io/en/latest/autoapi/pyranges/readers/index.html?highlight=read_gtf#pyranges.readers.read_gtf"
+        )
+
     gr = pr.read_gtf(gtf_path)
 
     # check the validity of gr
@@ -536,9 +551,7 @@ def make_splici_txome(
             shutil.rmtree(temp_dir, ignore_errors=True)
         except subprocess.CalledProcessError as err:
             no_bt = True
-            warnings.warn(
-                f"Bedtools failed with message:\n{err}\n Use biopython instead."
-            )
+            warnings.warn(f"Bedtools failed. Use biopython instead.\n{err}")
             shutil.rmtree(temp_dir, ignore_errors=True)
 
     if no_bt:
