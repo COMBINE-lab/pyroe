@@ -404,7 +404,7 @@ def make_splici_txome(
     except ValueError:
         # in this case couldn't even run subprocess
         raise RuntimeError(
-            f"PyRanges failed to parse the input GTF file. Please check the PyRanges documentation for the expected GTF format constraints.\nhttps://pyranges.readthedocs.io/en/latest/autoapi/pyranges/readers/index.html?highlight=read_gtf#pyranges.readers.read_gtf"
+            "PyRanges failed to parse the input GTF file. Please check the PyRanges documentation for the expected GTF format constraints.\nhttps://pyranges.readthedocs.io/en/latest/autoapi/pyranges/readers/index.html?highlight=read_gtf#pyranges.readers.read_gtf"
         )
 
     gr = pr.read_gtf(gtf_path)
@@ -551,9 +551,7 @@ def make_splici_txome(
             shutil.rmtree(temp_dir, ignore_errors=True)
         except subprocess.CalledProcessError as err:
             no_bt = True
-            warnings.warn(
-                f"Bedtools failed. Use biopython instead.\n{err}"
-            )
+            warnings.warn(f"Bedtools failed. Use biopython instead.\n{err}")
             shutil.rmtree(temp_dir, ignore_errors=True)
 
     if no_bt:
