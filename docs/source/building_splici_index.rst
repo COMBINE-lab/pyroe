@@ -10,9 +10,10 @@ Following is an example of calling the `pyroe` to make the *splici* index refere
   pyroe make-splici extdata/small_example_genome.fa extdata/small_example.gtf 5 splici_txome --flank-trim-length 2 --filename-prefix transcriptome_splici --dedup-seqs
         
         
-The `pyroe` program writes two files to your specified output directory `output_dir`. They are 
+The `pyroe` program writes three files to your specified output directory `output_dir`. They are 
 * A FASTA file that stores the extracted splici sequences.
 * A three columns' transcript-name-to-gene-name file that stores the name of each transcript in the splici index reference, their corresponding gene name, and the splicing status (`S` for spliced and `U` for unspliced) of those transcripts.
+* A two column TSV file that maps gene-ids (used as the keys in eventual alevin-fry output) to gene-names. This can later be used with `pyroe`'s `convert` command to convert gene ids to gene names in the count matrix.
 
 Full usage
 ==========
@@ -52,6 +53,8 @@ Full usage
     --no-bt               A flag indicates whether to disable bedtools.
     --no-flanking-merge   A flag indicates whether introns will be merged after
                             adding flanking length.
+    --write-clean-gtf     A flag indicates whether a clean gtf will be written 
+                            if invalid records are encountered.
 
 
 The *splici* index
