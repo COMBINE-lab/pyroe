@@ -1,4 +1,4 @@
-def append_extra(extra_infile, out_fa, out_t2g3col, col_status):
+def append_extra(extra_infile, out_fa, out_t2g3col, id2name_path, col_status):
     """
     extra_infile : str
         path to the extra FASTA format input file from which to read the extra records
@@ -6,6 +6,8 @@ def append_extra(extra_infile, out_fa, out_t2g3col, col_status):
         path to the output FASTA file being created (will be *appended* to)
     out_t2g3col : str
         path to the output t2g 3-column file (will be *appended* to)
+    id2name_path : str
+        path to the output (existing) gene id to gene name tsv (will be *appended* to)
     col_status : char
         splicing status to use for these records (one of 'S' or 'U')
     """
@@ -16,11 +18,13 @@ def append_extra(extra_infile, out_fa, out_t2g3col, col_status):
     with open(extra_infile) as extra_in_fa:
         with open(out_fa, "a") as splici_fa:
             with open(out_t2g3col, "a") as t2g:
-                for title, sequence in SimpleFastaParser(extra_in_fa):
-                    tid = title.split()[0]
-                    splici_fa.write(f">{tid}\n")
-                    splici_fa.write(f"{sequence}\n")
-                    t2g.write(f"{tid}\t{tid}\t{col_status}\n")
+                with open(id2name_path, "a") as id_to_name:
+                    for title, sequence in SimpleFastaParser(extra_in_fa):
+                        tid = title.split()[0]
+                        splici_fa.write(f">{tid}\n")
+                        splici_fa.write(f"{sequence}\n")
+                        t2g.write(f"{tid}\t{tid}\t{col_status}\n")
+                        id_to_name.write(f"{tid}\t{tid}\n")
 
 
 def dedup_sequences(output_dir, in_fa, out_fa):
@@ -632,11 +636,11 @@ def make_splici_txome(
 
     # append extra spliced transcript onto splici
     if extra_spliced is not None:
-        append_extra(extra_spliced, out_fa, out_t2g3col, "S")
+        append_extra(extra_spliced, out_fa, out_t2g3col, id2name_path, "S")
 
     # append extra unspliced transcript onto splici
     if extra_unspliced is not None:
-        append_extra(extra_unspliced, out_fa, out_t2g3col, "U")
+        append_extra(extra_unspliced, out_fa, out_t2g3col, id2name_path, "U")
 
     if dedup_seqs:
         # Note: out_fa is intentionally passed as both
