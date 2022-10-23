@@ -400,7 +400,7 @@ def make_splici_txome(
     filename_prefix = filename_prefix + "_fl" + str(flank_length)
     out_fa = os.path.join(output_dir, filename_prefix + ".fa")
     out_t2g3col = os.path.join(output_dir, filename_prefix + "_t2g_3col.tsv")
-    id2name_path = os.path.join(output_dir, "gene_name_to_id.tsv")
+    id2name_path = os.path.join(output_dir, "gene_id_to_name.tsv")
 
     # load gtf
     try:
