@@ -13,20 +13,20 @@ The `pyroe` package provides useful functions for analyzing single-cell or singl
 ## Installation
 The `pyroe` package can be accessed from its [github repository](https://github.com/COMBINE-lab/pyroe), installed via [`pip`](https://pip.pypa.io/en/stable/). To install the `pyroe` package via `pip` use the command:
 
-```
+```sh
 pip install pyroe
 ```
 
 To make use of the `load_fry` function (which, itself, installs [scanpy](https://scanpy.readthedocs.io/en/stable/)), you should also be sure to install the package with the `scanpy` extra:
 
-```
+```sh
 pip install pyroe[scanpy]
 ```
 
 Alternatively, `pyroe` can be installed via `bioconda`, which will automatically install the variant of the package including `load_fry`, and will
 also install `bedtools` to enable faster construction of the *splici* reference (see below).  This installation can be performed with the command:
 
-```
+```sh
 conda install pyroe
 ```
 
@@ -39,7 +39,7 @@ The USA mode in alevin-fry requires a special index reference, which is called t
 
 Following is an example of calling the `pyroe` to make the *splici* index reference. The final flank length is calculated as the difference between the read length and the flank_trim_length, i.e., 5-2=3. This function allows you to add extra spliced and unspliced sequences to the *splici* index, which will be useful when some unannotated sequences, such as mitochondrial genes, are important for your experiment. **Note** : to make `pyroe` work more quickly, it is recommended to have the latest version of [`bedtools`](https://bedtools.readthedocs.io/en/latest/) ([Aaron R. Quinlan and Ira M. Hall, 2010](https://doi.org/10.1093/bioinformatics/btq033)) installed.
 
-```
+```sh
 pyroe make-splici extdata/small_example_genome.fa extdata/small_example.gtf 5 splici_txome \
       --flank-trim-length 2 --filename-prefix transcriptome_splici --dedup-seqs
 ```
@@ -89,6 +89,47 @@ optional arguments:
 ### the *splici* index
 
 The *splici* index of a given species consists of the transcriptome of the species, i.e., the spliced transcripts, and the intronic sequences of the species. Within a gene, if the flanked intronic sequences overlap with each other, the overlapped intronic sequences will be collapsed as a single intronic sequence to make sure each base will appear only once in the intronic sequences. For more detailed information, please check the section S2 in the supplementary file of [alevin-fry manuscript](https://www.biorxiv.org/content/10.1101/2021.06.29.450377v2).
+
+## Prepare spliceu index for quantification with alevin-fry
+
+Recently, [He et al.](https://www.biorxiv.org/content/10.1101/2023.01.04.522742v1) introduced the <ins>*splice*</ins>d+<ins>*u*</ins>nspliced (_spliceu_) index in alevin-fry. This requires the _spliceu_ transcriptome. The command of making an *spliceu* transcriptome reference is similar to making a _splici_ reference:
+
+```sh
+pyroe make-spliceu extdata/small_example_genome.fa extdata/small_example.gtf spliceu_txome \
+--filename-prefix transcriptome_spliceu
+```
+
+### Full usage
+```
+usage: pyroe make-spliceu [-h] [--filename-prefix FILENAME_PREFIX]
+                          [--extra-spliced EXTRA_SPLICED]
+                          [--extra-unspliced EXTRA_UNSPLICED]
+                          [--bt-path BT_PATH] [--no-bt] [--dedup-seqs]
+                          [--write-clean-gtf]
+                          genome-path gtf-path output-dir
+
+positional arguments:
+  genome-path           The path to a genome fasta file.
+  gtf-path              The path to a gtf file.
+  output-dir            The output directory where Spliceu reference files
+                        will be written.
+
+options:
+  -h, --help            show this help message and exit
+  --filename-prefix FILENAME_PREFIX
+                        The file name prefix of the generated output files.
+  --extra-spliced EXTRA_SPLICED
+                        The path to an extra spliced sequence fasta file.
+  --extra-unspliced EXTRA_UNSPLICED
+                        The path to an extra unspliced sequence fasta file.
+  --bt-path BT_PATH     The path to bedtools v2.30.0 or greater.
+  --no-bt               A flag indicates whether bedtools will be used for
+                        generating Spliceu reference files.
+  --dedup-seqs          A flag indicates whether identical sequences will be
+                        deduplicated.
+  --write-clean-gtf     A flag indicates whether a clean gtf will be written
+                        if encountered invalid records.
+```
 
 ## Processing alevin-fry quantification result
 
@@ -176,7 +217,7 @@ We provide two python functions:
 - `load_processed_quant()` can fetch the quantification result of one or more available dataset as `fetch_processed_quant()`, and load them into python as `AnnData` objects. We also provide a CLI for fetching quantification results.
 
 
-```bash
+```sh
 pyroe fetch-quant 1 3 6
 ```
 
