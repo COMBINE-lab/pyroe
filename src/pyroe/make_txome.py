@@ -649,6 +649,7 @@ def make_splici_txome(
         # the deduplicated fasta.
         dedup_sequences(output_dir, out_fa, out_fa)
 
+
 def make_spliceu_txome(
     genome_path,
     gtf_path,
@@ -736,7 +737,8 @@ def make_spliceu_txome(
     from packaging.version import parse as parse_version
 
     from Bio import SeqIO
-    from Bio.SeqIO.FastaIO import SimpleFastaParser
+
+    # from Bio.SeqIO.FastaIO import SimpleFastaParser
 
     # Preparation
     # check fasta file
@@ -851,20 +853,14 @@ def make_spliceu_txome(
     # write to files
     # t2g_3col.tsv
     t2g_3col = spliceu.df[["Name", "Gene", "splice_status"]].drop_duplicates()
-    t2g_3col.to_csv(
-        out_t2g3col, sep="\t", header=False, index=False
-    )
-    
+    t2g_3col.to_csv(out_t2g3col, sep="\t", header=False, index=False)
+
     # t2g.csv
-    t2g_3col[["Name", "Gene"]].to_csv(
-        out_t2g, sep="\t", header=False, index=False
-    )
-    
+    t2g_3col[["Name", "Gene"]].to_csv(out_t2g, sep="\t", header=False, index=False)
+
     # g2g.csv
-    t2g_3col[["Gene", "Gene"]].to_csv(
-        out_g2g, sep="\t", header=False, index=False
-    )
-    
+    t2g_3col[["Gene", "Gene"]].to_csv(out_g2g, sep="\t", header=False, index=False)
+
     # print(spliceu.head())
     tid2strand = dict(zip(spliceu.Name, spliceu.Strand))
 
@@ -957,11 +953,13 @@ def make_spliceu_txome(
                     for (idx, unspliced_record) in chr_records.iterrows():
                         # create Seqeture object for extracting sequence from chromosome
                         unspliced_feature = SeqFeature(
-                            FeatureLocation(unspliced_record.Start, unspliced_record.End),
+                            FeatureLocation(
+                                unspliced_record.Start, unspliced_record.End
+                            ),
                             type="unspliced",
                             id=unspliced_record.Name,
                         )
-                        unspliced_feature.strand=unspliced_record.Strand
+                        unspliced_feature.strand = unspliced_record.Strand
                         # append the unspliced sequence to the seq list, specify name as well
                         unspliced_seqs.append(
                             SeqRecord(
