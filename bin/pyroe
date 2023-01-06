@@ -2,7 +2,7 @@
 
 import logging
 
-from pyroe import make_splici_txome
+from pyroe import make_splici_txome, make_spliceu_txome
 from pyroe import fetch_processed_quant
 from pyroe import convert
 from pyroe import id_to_name
@@ -22,12 +22,15 @@ if __name__ == "__main__":
     parser.add_argument(
         "-v", "--version", action="version", version=f"pyroe {__version__}"
     )
+    
     subparsers = parser.add_subparsers(
         title="subcommands",
         dest="command",
         description="valid subcommands",
         help="additional help",
     )
+    
+    # make-splici
     parser_makeSplici = subparsers.add_parser(
         "make-splici", help="Make splici reference"
     )
@@ -96,6 +99,63 @@ if __name__ == "__main__":
         help="A flag indicates whether flank lengths will be considered when merging introns.",
     )
     parser_makeSplici.add_argument(
+        "--write-clean-gtf",
+        action="store_true",
+        help="A flag indicates whether a clean gtf will be written if encountered invalid records.",
+    )
+
+    # make-spliceu
+    parser_makeSpliceu = subparsers.add_parser(
+        "make-spliceu", help="Make spliceu reference"
+    )
+    parser_makeSpliceu.add_argument(
+        "genome_path",
+        metavar="genome-path",
+        type=str,
+        help="The path to a genome fasta file.",
+    )
+    parser_makeSpliceu.add_argument(
+        "gtf_path", metavar="gtf-path", type=str, help="The path to a gtf file."
+    )
+    parser_makeSpliceu.add_argument(
+        "output_dir",
+        metavar="output-dir",
+        type=str,
+        help="The output directory where Spliceu reference files will be written.",
+    )
+    parser_makeSpliceu.add_argument(
+        "--filename-prefix",
+        type=str,
+        default="spliceu",
+        help="The file name prefix of the generated output files.",
+    )
+    parser_makeSpliceu.add_argument(
+        "--extra-spliced",
+        type=str,
+        help="The path to an extra spliced sequence fasta file.",
+    )
+    parser_makeSpliceu.add_argument(
+        "--extra-unspliced",
+        type=str,
+        help="The path to an extra unspliced sequence fasta file.",
+    )
+    parser_makeSpliceu.add_argument(
+        "--bt-path",
+        type=str,
+        default="bedtools",
+        help="The path to bedtools v2.30.0 or greater.",
+    )
+    parser_makeSpliceu.add_argument(
+        "--no-bt",
+        action="store_true",
+        help="A flag indicates whether bedtools will be used for generating Spliceu reference files.",
+    )
+    parser_makeSpliceu.add_argument(
+        "--dedup-seqs",
+        action="store_true",
+        help="A flag indicates whether identical sequences will be deduplicated.",
+    )
+    parser_makeSpliceu.add_argument(
         "--write-clean-gtf",
         action="store_true",
         help="A flag indicates whether a clean gtf will be written if encountered invalid records.",
@@ -210,6 +270,19 @@ if __name__ == "__main__":
             no_bt=args.no_bt,
             bt_path=args.bt_path,
             no_flanking_merge=args.no_flanking_merge,
+            write_clean_gtf=args.write_clean_gtf,
+        )
+    elif args.command == "make-spliceu":
+        make_spliceu_txome(
+            genome_path=args.genome_path,
+            gtf_path=args.gtf_path,
+            output_dir=args.output_dir,
+            filename_prefix=args.filename_prefix,
+            extra_spliced=args.extra_spliced,
+            extra_unspliced=args.extra_unspliced,
+            dedup_seqs=args.dedup_seqs,
+            no_bt=args.no_bt,
+            bt_path=args.bt_path,
             write_clean_gtf=args.write_clean_gtf,
         )
     elif args.command == "fetch-quant":
