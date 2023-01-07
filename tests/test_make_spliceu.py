@@ -25,8 +25,8 @@ def test_make_spliceu():
         no_bt=True,
     )
 
-    out_fa = os.path.join(output_dir.name, "_".join([filename_prefix, "spliceu.fa"]))
-    out_t2g = os.path.join(output_dir.name, "_".join([filename_prefix, "spliceu_t2g_3col.tsv"]))
+    out_fa = os.path.join(output_dir.name, "".join([filename_prefix, ".fa"]))
+    out_t2g = os.path.join(output_dir.name, "".join([filename_prefix, "_t2g_3col.tsv"]))
     genome = SeqIO.to_dict(SeqIO.parse(genome_path, "fasta"))
     spliceu_seqs = SeqIO.to_dict(SeqIO.parse(out_fa, "fasta"))
     t2g_colnames = ["txp_name", "gene_name", "splice_status"]
