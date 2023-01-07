@@ -582,9 +582,10 @@ def make_splici_txome(
                         intron_feature = SeqFeature(
                             FeatureLocation(intron_record.Start, intron_record.End),
                             type="intron",
-                            strand=intron_record.Strand,
                             id=intron_record.Name,
                         )
+                        intron_feature.strand = intron_record.Strand
+
                         # append the intron sequence to the seq list, specify name as well
                         intron_seqs.append(
                             SeqRecord(
