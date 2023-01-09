@@ -32,7 +32,9 @@ if __name__ == "__main__":
     
     # make-splici
     parser_makeSplici = subparsers.add_parser(
-        "make-splici", help="Make splici reference"
+        "make-spliced+intronic", 
+        help="Make spliced + intronic reference",
+        aliases=['make-splici']
     )
     parser_makeSplici.add_argument(
         "genome_path",
@@ -106,7 +108,9 @@ if __name__ == "__main__":
 
     # make-spliceu
     parser_makeSpliceu = subparsers.add_parser(
-        "make-spliceu", help="Make spliceu reference"
+        "make-spliced+unspliced",
+        help="Make spliced + unspliced reference",
+        aliases=['make-spliceu']
     )
     parser_makeSpliceu.add_argument(
         "genome_path",
