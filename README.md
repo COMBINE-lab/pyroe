@@ -6,7 +6,7 @@
 
 The `pyroe` package provides useful functions for analyzing single-cell or single-nucleus RNA-sequencing data using `alevin-fry`, which consists of
 
-1. Preparing the *splici* reference for the `USA` mode of `alevin-fry`, which will export a unspliced, a spliced, and an ambiguous molecule count for each gene within each cell.
+1. Preparing the spliced + intronic (*splici*) or spliced + unspliced (*spliceu*) reference for the `USA` mode of `alevin-fry`, which will export a unspliced, a spliced, and an ambiguous molecule count for each gene within each cell.
 2. Fetching and loading the preprocessed quantification results of `alevin-fry` into python as an [`AnnData`](https://anndata.readthedocs.io/en/latest/) object.
 3. Converting the `mtx` format output of `alevin-fry` (specifically in USA mode) to other formats, such as the `AnnData` native [`h5ad` format](https://anndata.readthedocs.io/en/latest/generated/anndata.read_h5ad.html#anndata.read_h5ad).
 
@@ -24,7 +24,7 @@ pip install pyroe[scanpy]
 ```
 
 Alternatively, `pyroe` can be installed via `bioconda`, which will automatically install the variant of the package including `load_fry`, and will
-also install `bedtools` to enable faster construction of the *splici* reference (see below).  This installation can be performed with the command:
+also install `bedtools` to enable faster construction of the ** reference (see below).  This installation can be performed with the command:
 
 ```sh
 conda install pyroe
@@ -33,25 +33,25 @@ conda install pyroe
 with the appropriate bioconda channel in the conda channel list.
 
 
-## Preparing a splici index for quantification with alevin-fry
+## Preparing a *spliced + intronic (_splici_)* index for quantification with alevin-fry
 
-The USA mode in alevin-fry requires a special index reference, which is called the *splici* reference. The *splici* reference contains the spliced transcripts plus the intronic sequences of each gene. The `make_splici_txome()` function is designed to make the *splici* reference by taking a genome FASTA file and a gene annotation GTF file as the input. Details about the *splici* can be found in Section S2 of the supplementary file of the [alevin-fry paper](https://www.nature.com/articles/s41592-022-01408-3). To run pyroe, you also need to specify the read length argument `read_length` of the experiment you are working on and the flank trimming length `flank_trim_length`. A final flank length will be computed as the difference between the read_length and flank trimming length and will be attached to the ends of each intron to absorb the intron-exon junctional reads.
+The USA mode in alevin-fry requires a special index reference. Specifically, it requires either a spliced + intronic (*splici*)reference or a spliced + unspliced (*spliceu*) reference. The spliced + intronic (*splici*) reference contains the spliced transcripts plus the (merged and collapsed) intronic sequences of each gene. The `make_splici_txome()` function is designed to make the spliced + intronic reference by taking a genome FASTA file and a gene annotation GTF file as the input. Details about the spliced + intronic can be found in Section S2 of the supplementary file of the [alevin-fry paper](https://www.nature.com/articles/s41592-022-01408-3). To run pyroe, you also need to specify the read length argument `read_length` of the experiment you are working on and the flank trimming length `flank_trim_length`. A final flank length will be computed as the difference between the read_length and flank trimming length and will be attached to the ends of each intron to absorb the intron-exon junctional reads. To make the splici index using `pyroe`, one can call `pyroe make-spliced+intronic` or its alias `pyroe make-splici`.
 
-Following is an example of calling the `pyroe` to make the *splici* index reference. The final flank length is calculated as the difference between the read length and the flank_trim_length, i.e., 5-2=3. This function allows you to add extra spliced and unspliced sequences to the *splici* index, which will be useful when some unannotated sequences, such as mitochondrial genes, are important for your experiment. **Note** : to make `pyroe` work more quickly, it is recommended to have the latest version of [`bedtools`](https://bedtools.readthedocs.io/en/latest/) ([Aaron R. Quinlan and Ira M. Hall, 2010](https://doi.org/10.1093/bioinformatics/btq033)) installed.
+Following is an example of calling the `pyroe` to make the *splici* index reference. The final flank length is calculated as the difference between the read length and the flank_trim_length, i.e., 5-2=3. This function allows you to add extra spliced and unspliced sequences to the spliced + intronic index, which will be useful when some unannotated sequences, such as mitochondrial genes, are important for your experiment. **Note** : to make `pyroe` work more quickly, it is recommended to have the latest version of [`bedtools`](https://bedtools.readthedocs.io/en/latest/) ([Aaron R. Quinlan and Ira M. Hall, 2010](https://doi.org/10.1093/bioinformatics/btq033)) installed. 
 
 ```sh
-pyroe make-splici extdata/small_example_genome.fa extdata/small_example.gtf 5 splici_txome \
+pyroe make-spliced+intronic extdata/small_example_genome.fa extdata/small_example.gtf 5 splici_txome \
       --flank-trim-length 2 --filename-prefix transcriptome_splici --dedup-seqs
 ```
 
 The `pyroe` program writes two files to your specified output directory `output_dir`. They are 
 - A FASTA file that stores the extracted splici sequences.
-- A three columns' transcript-name-to-gene-name file that stores the name of each transcript in the splici index reference, their corresponding gene name, and the splicing status (`S` for spliced and `U` for unspliced) of those transcripts.
+- A three columns' transcript-name-to-gene-name file that stores the name of each transcript in the spliced + intronic index reference, their corresponding gene name, and the splicing status (`S` for spliced and `U` for unspliced) of those transcripts.
 
 ### Full usage
 
 ```
-usage: pyroe make-splici [-h] [--filename-prefix FILENAME_PREFIX]
+usage: pyroe make-spliced+intronic [-h] [--filename-prefix FILENAME_PREFIX]
                          [--flank-trim-length FLANK_TRIM_LENGTH]
                          [--extra-spliced EXTRA_SPLICED]
                          [--extra-unspliced EXTRA_UNSPLICED]
@@ -86,22 +86,22 @@ optional arguments:
                           adding flanking length.
 ```
 
-### the *splici* index
+### the *spliced + intronic (splici)* index
 
-The *splici* index of a given species consists of the transcriptome of the species, i.e., the spliced transcripts, and the intronic sequences of the species. Within a gene, if the flanked intronic sequences overlap with each other, the overlapped intronic sequences will be collapsed as a single intronic sequence to make sure each base will appear only once in the intronic sequences. For more detailed information, please check the section S2 in the supplementary file of [alevin-fry manuscript](https://www.biorxiv.org/content/10.1101/2021.06.29.450377v2).
+The spliced + intronic index of a given species consists of the transcriptome of the species, i.e., the spliced transcripts, and the intronic sequences of the species. Within a gene, if the flanked intronic sequences overlap with each other, the overlapped intronic sequences will be collapsed as a single intronic sequence to make sure each base will appear only once in the intronic sequences. For more detailed information, please check the section S2 in the supplementary file of [alevin-fry manuscript](https://www.biorxiv.org/content/10.1101/2021.06.29.450377v2).
 
-## Prepare spliceu index for quantification with alevin-fry
+## Prepare *spliced + unspliced (_spliceu_)* index for quantification with alevin-fry
 
-Recently, [He et al.](https://www.biorxiv.org/content/10.1101/2023.01.04.522742v1) introduced the <ins>*splice*</ins>d+<ins>*u*</ins>nspliced (_spliceu_) index in alevin-fry. This requires the _spliceu_ transcriptome. The command of making an *spliceu* transcriptome reference is similar to making a _splici_ reference:
+Recently, [He et al.](https://www.biorxiv.org/content/10.1101/2023.01.04.522742v1) introduced the <ins>*splice*</ins>d+<ins>*u*</ins>nspliced (_spliceu_) index in alevin-fry. This requires the spliced + unspliced transcriptome. The command to make an spliced + unspliced transcriptome reference is similar to making a spliced + intronic reference. To make the splici index using `pyroe`, one can call `pyroe make-spliced+unspliced` or its alias `pyroe make-spliceu`
 
 ```sh
-pyroe make-spliceu extdata/small_example_genome.fa extdata/small_example.gtf spliceu_txome \
+pyroe make-spliced+unspliced extdata/small_example_genome.fa extdata/small_example.gtf spliceu_txome \
 --filename-prefix transcriptome_spliceu
 ```
 
 ### Full usage
 ```
-usage: pyroe make-spliceu [-h] [--filename-prefix FILENAME_PREFIX]
+usage: pyroe make-spliced+unspliced [-h] [--filename-prefix FILENAME_PREFIX]
                           [--extra-spliced EXTRA_SPLICED]
                           [--extra-unspliced EXTRA_UNSPLICED]
                           [--bt-path BT_PATH] [--no-bt] [--dedup-seqs]
