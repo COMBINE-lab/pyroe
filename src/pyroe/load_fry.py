@@ -22,7 +22,7 @@ def load_fry(frydir, output_format="scRNA", nonzero=False, quiet=False):
     Optional Parameters
     ----------
     output_format : `str` or `dict`
-        A string represents one of the pre-defined output formats, which are "scRNA", "snRNA" and "velocity". \\
+        A string represents one of the pre-defined output formats, which are "scRNA", "S+A", "snRNA", "all", "U+S+A" and "velocity". \\
         If a customized format of the returned `AnnData` is needed, one can pass a Dictionary.\\
         See Notes section for details.
 
@@ -47,10 +47,12 @@ def load_fry(frydir, output_format="scRNA", nonzero=False, quiet=False):
 
     * "scRNA": \\
         This format is recommended for single cell RNA-sequencing experiments.
-        It returns a `X` field that contains the S+A count of each gene in each cell without any extra layers.
+        It returns a `X` field that contains the S+A count of each gene in each cell,
+        and a `unspliced` field that contains the U count of each gene.
 
-    * "snRNA": \\
-        This format is recommended for single nucleus RNA-sequencing experiments.
+    * "snRNA", "all" and "U+S+A": \\
+        These three formats are the same. It is recommended for single-nucleus RNA-sequencing experiments.
+        CellRanger 7 returns this format for both single-cell and single-nucleus experiments.
         It returns a `X` field that contains the U+S+A count of each gene in each cell without any extra layers.
 
     * "raw": \\
@@ -202,9 +204,7 @@ def process_output_format(output_format, quiet):
     if isinstance(output_format, (str, dict)):
         if isinstance(output_format, str):
             predefined_format = {
-                "scrna": {"X": ["S", "A"],
-                          "unspliced": ["U"]
-                        },
+                "scrna": {"X": ["S", "A"], "unspliced": ["U"]},
                 "S+A": {"X": ["S", "A"]},
                 "snrna": {"X": ["U", "S", "A"]},
                 "all": {"X": ["U", "S", "A"]},
@@ -226,9 +226,7 @@ def process_output_format(output_format, quiet):
             if output_format not in predefined_format.keys():
                 # invalid output_format string
                 if not quiet:
-                    print(
-                        "A undefined Provided output_format string provided."
-                    )
+                    print("A undefined Provided output_format string provided.")
                     print("See function help message for details.")
                 raise ValueError("Invalid output_format.")
             if not quiet:
