@@ -171,20 +171,26 @@ returned by alevin-fry.
 
 The following formats are defined:
 
-* "scRNA": \
-    This format is recommended for single cell RNA-sequencing experiments. 
-    It returns a `X` field that contains the S+A count of each gene in each cell without any extra layers.
+* "scRNA": 
+    This format is recommended for single cell RNA-sequencing experiments.
+    It returns a `X` field that contains the S+A count of each gene in each cell,
+    and a `unspliced` field that contains the U count of each gene.
 
-* "snRNA": \
-    This format is recommended for single nucleus RNA-sequencing experiments. 
-    It returns a `X` field that contains the U+S+A count of each gene in each cell without any extra layers.
+* "snRNA", "all" and "U+S+A": 
+    These three formats are the same. They return a `X` field that contains the U+S+A 
+    count of each gene in each cell without any extra layers.
+    It is recommended for single-nucleus RNA-sequencing experiments.
+    CellRanger 7 returns this format for both single-cell and single-nucleus experiments.
 
-* "raw": \
-    This format uses the S count matrix as the `X` field and put the U, S, and A counts into three 
+* "S+A": 
+    It returns a `X` field that contains the S+A count of each gene in each cell with no extra field.
+
+* "raw": 
+    This format uses the S count matrix as the `X` field and put the U, S, and A counts into three
     separate layers, which are "unspliced", "spliced" and "ambiguous".
 
-* "velocity": \
-    This format is the same as "scRNA", except it contains two extra layers: the "spliced" layer, 
+* "velocity": 
+    This format is the same as "scRNA", except it contains two extra layers: the "spliced" layer,
     which contains the S+A counts, and the "unspliced" layer, which contains the U counts.
 
 A custom output format can be defined using a Dictionary specifying the desired format of the output `Anndata` object.  
