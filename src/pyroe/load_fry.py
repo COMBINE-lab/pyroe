@@ -51,9 +51,11 @@ def load_fry(frydir, output_format="scRNA", nonzero=False, quiet=False):
         and a `unspliced` field that contains the U count of each gene.
 
     * "snRNA", "all" and "U+S+A": \\
-        These three formats are the same. It is recommended for single-nucleus RNA-sequencing experiments.
+        These three formats are the same. They return a `X` field that contains the U+S+A 
+        count of each gene in each cell without any extra layers.
+        It is recommended for single-nucleus RNA-sequencing experiments.
         CellRanger 7 returns this format for both single-cell and single-nucleus experiments.
-        It returns a `X` field that contains the U+S+A count of each gene in each cell without any extra layers.
+        
 
     * "raw": \\
         This format uses the S count matrix as the `X` field and put the U, S, and A counts into three
