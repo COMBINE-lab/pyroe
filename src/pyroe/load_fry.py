@@ -202,8 +202,13 @@ def process_output_format(output_format, quiet):
     if isinstance(output_format, (str, dict)):
         if isinstance(output_format, str):
             predefined_format = {
-                "scrna": {"X": ["S", "A"]},
+                "scrna": {"X": ["S", "A"],
+                          "unspliced": ["U"]
+                        },
+                "S+A": {"X": ["S", "A"]},
                 "snrna": {"X": ["U", "S", "A"]},
+                "all": {"X": ["U", "S", "A"]},
+                "U+S+A": {"X": ["U", "S", "A"]},
                 "velocity": {
                     "X": ["S", "A"],
                     "spliced": ["S", "A"],
@@ -222,7 +227,7 @@ def process_output_format(output_format, quiet):
                 # invalid output_format string
                 if not quiet:
                     print(
-                        "Provided output_format string must be 'scRNA', 'snRNA', 'raw' or 'velocity'."
+                        "A undefined Provided output_format string provided."
                     )
                     print("See function help message for details.")
                 raise ValueError("Invalid output_format.")
