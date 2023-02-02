@@ -222,9 +222,10 @@ def check_gr(gr, output_dir, write_clean_gtf):
 
 
 def check_bedtools_version(bt_path):
-    import subprocess    
+    import warnings
+    import subprocess
     from packaging.version import parse as parse_version
-    
+
     try:
         vstr = (
             subprocess.run([bt_path, "--version"], capture_output=True)
@@ -235,10 +236,9 @@ def check_bedtools_version(bt_path):
         found_ver = parse_version(vstr)
         req_ver = parse_version("2.30.0")
         return found_ver >= req_ver
-    except:
-    # except Exception as err:
+    except subprocess.CalledProcessError as err:
         # in this case couldn't even run subprocess
-        # warnings.warn(f"Cannot check bedtools version.\n{err}")
+        warnings.warn(f"Cannot check bedtools version.\n{err}")
         return False
 
 
@@ -334,9 +334,8 @@ def make_splici_txome(
     import pyranges as pr
     import warnings
     import os
-    import shutil
     import subprocess
-
+    import shutil
     from Bio import SeqIO
     from Bio.SeqIO.FastaIO import SimpleFastaParser
 
@@ -727,14 +726,10 @@ def make_spliceu_txome(
     """
 
     import pyranges as pr
-
     import warnings
-
     import os
-
     import subprocess
     import shutil
-
     from Bio import SeqIO
 
     # from Bio.SeqIO.FastaIO import SimpleFastaParser
@@ -798,7 +793,7 @@ def make_spliceu_txome(
     # load gtf
     try:
         gr = pr.read_gtf(gtf_path)
-    except:
+    except ValueError:
         # in this case couldn't even run subprocess
         raise RuntimeError(
             "PyRanges failed to parse the input GTF file. Please check the PyRanges documentation for the expected GTF format constraints.\nhttps://pyranges.readthedocs.io/en/latest/autoapi/pyranges/readers/index.html?highlight=read_gtf#pyranges.readers.read_gtf"
