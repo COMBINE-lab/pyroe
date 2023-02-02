@@ -221,6 +221,27 @@ def check_gr(gr, output_dir, write_clean_gtf):
     return gr
 
 
+def check_bedtools_version(bt_path):
+    import subprocess    
+    from packaging.version import parse as parse_version
+    
+    try:
+        vstr = (
+            subprocess.run([bt_path, "--version"], capture_output=True)
+            .stdout.decode()
+            .strip()
+            .split("v")[1]
+        )
+        found_ver = parse_version(vstr)
+        req_ver = parse_version("2.30.0")
+        return found_ver >= req_ver
+    except:
+    # except Exception as err:
+        # in this case couldn't even run subprocess
+        # warnings.warn(f"Cannot check bedtools version.\n{err}")
+        return False
+
+
 def make_splici_txome(
     genome_path,
     gtf_path,
@@ -311,15 +332,10 @@ def make_splici_txome(
     """
 
     import pyranges as pr
-
     import warnings
-
     import os
-
-    import subprocess
     import shutil
-
-    from packaging.version import parse as parse_version
+    import subprocess
 
     from Bio import SeqIO
     from Bio.SeqIO.FastaIO import SimpleFastaParser
@@ -340,22 +356,6 @@ def make_splici_txome(
     if not os.path.isfile(gtf_path):
         raise IOError("Cannot open the input gtf file!")
 
-    def check_bedtools_version(bt_check_path):
-        try:
-            vstr = (
-                subprocess.run([bt_path, "--version"], capture_output=True)
-                .stdout.decode()
-                .strip()
-                .split("v")[1]
-            )
-            found_ver = parse_version(vstr)
-            req_ver = parse_version("2.30.0")
-            return found_ver >= req_ver
-        except subprocess.CalledProcessError as err:
-            # in this case couldn't even run subprocess
-            warnings.warn(f"Cannot check bedtools version.\n{err}")
-            return False
-
     # check bedtools
     if not no_bt:
         # check at the provided path
@@ -366,14 +366,14 @@ def make_splici_txome(
                 # in this case, there's nowhere else to check
                 # so give up on bedtools
                 print(
-                    "bedtools in the environemnt PATH is either",
+                    "bedtools in the environemnt PATH either is",
                     "older than v.2.30.0 or doesn't exist.",
                     "\nBiopython will be used.",
                 )
                 no_bt = True
             else:
                 print(
-                    "bedtools specified by bt_path is either",
+                    "bedtools specified by bt_path either is",
                     "older than v.2.30.0 or doesn't exist.",
                     "\nTry finding bedtools in the environmental PATH.",
                 )
@@ -381,7 +381,7 @@ def make_splici_txome(
                 # fallback to biopython
                 if not check_bedtools_version("bedtools"):
                     print(
-                        "bedtools in the environemnt PATH is either",
+                        "bedtools in the environemnt PATH either is",
                         "older than v.2.30.0 or doesn't exist.",
                         "\nBiopython will be used.",
                     )
@@ -553,7 +553,7 @@ def make_splici_txome(
                     prev_rec = prev_rec.reverse_complement(id=True, description=True)
                 SeqIO.write(prev_rec, out_handle, "fasta")
             shutil.rmtree(temp_dir, ignore_errors=True)
-        except subprocess.CalledProcessError as err:
+        except Exception as err:
             no_bt = True
             warnings.warn(f"Bedtools failed. Use biopython instead.\n{err}")
             shutil.rmtree(temp_dir, ignore_errors=True)
@@ -735,8 +735,6 @@ def make_spliceu_txome(
     import subprocess
     import shutil
 
-    from packaging.version import parse as parse_version
-
     from Bio import SeqIO
 
     # from Bio.SeqIO.FastaIO import SimpleFastaParser
@@ -750,22 +748,6 @@ def make_spliceu_txome(
     if not os.path.isfile(gtf_path):
         raise IOError("Cannot open the input gtf file!")
 
-    def check_bedtools_version(bt_check_path):
-        try:
-            vstr = (
-                subprocess.run([bt_path, "--version"], capture_output=True)
-                .stdout.decode()
-                .strip()
-                .split("v")[1]
-            )
-            found_ver = parse_version(vstr)
-            req_ver = parse_version("2.30.0")
-            return found_ver >= req_ver
-        except subprocess.CalledProcessError as err:
-            # in this case couldn't even run subprocess
-            warnings.warn(f"Cannot check bedtools version.\n{err}")
-            return False
-
     # check bedtools
     if not no_bt:
         # check at the provided path
@@ -776,14 +758,14 @@ def make_spliceu_txome(
                 # in this case, there's nowhere else to check
                 # so give up on bedtools
                 print(
-                    "bedtools in the environemnt PATH is either",
+                    "bedtools in the environemnt PATH either is",
                     "older than v.2.30.0 or doesn't exist.",
                     "\nBiopython will be used.",
                 )
                 no_bt = True
             else:
                 print(
-                    "bedtools specified by bt_path is either",
+                    "bedtools specified by bt_path either is",
                     "older than v.2.30.0 or doesn't exist.",
                     "\nTry finding bedtools in the environmental PATH.",
                 )
@@ -791,7 +773,7 @@ def make_spliceu_txome(
                 # fallback to biopython
                 if not check_bedtools_version("bedtools"):
                     print(
-                        "bedtools in the environemnt PATH is either",
+                        "bedtools in the environemnt PATH either is",
                         "older than v.2.30.0 or doesn't exist.",
                         "\nBiopython will be used.",
                     )
@@ -816,7 +798,7 @@ def make_spliceu_txome(
     # load gtf
     try:
         gr = pr.read_gtf(gtf_path)
-    except ValueError:
+    except:
         # in this case couldn't even run subprocess
         raise RuntimeError(
             "PyRanges failed to parse the input GTF file. Please check the PyRanges documentation for the expected GTF format constraints.\nhttps://pyranges.readthedocs.io/en/latest/autoapi/pyranges/readers/index.html?highlight=read_gtf#pyranges.readers.read_gtf"
@@ -927,7 +909,7 @@ def make_spliceu_txome(
                     prev_rec = prev_rec.reverse_complement(id=True, description=True)
                 SeqIO.write(prev_rec, out_handle, "fasta")
             shutil.rmtree(temp_dir, ignore_errors=True)
-        except subprocess.CalledProcessError as err:
+        except Exception as err:
             no_bt = True
             warnings.warn(f"Bedtools failed. Use biopython instead.\n{err}")
             shutil.rmtree(temp_dir, ignore_errors=True)
