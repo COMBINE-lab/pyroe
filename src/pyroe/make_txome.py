@@ -365,14 +365,14 @@ def make_splici_txome(
                 # in this case, there's nowhere else to check
                 # so give up on bedtools
                 print(
-                    "bedtools in the environemnt PATH either is",
+                    "bedtools in the environemnt PATH is either",
                     "older than v.2.30.0 or doesn't exist.",
                     "\nBiopython will be used.",
                 )
                 no_bt = True
             else:
                 print(
-                    "bedtools specified by bt_path either is",
+                    "bedtools specified by bt_path is either",
                     "older than v.2.30.0 or doesn't exist.",
                     "\nTry finding bedtools in the environmental PATH.",
                 )
@@ -380,7 +380,7 @@ def make_splici_txome(
                 # fallback to biopython
                 if not check_bedtools_version("bedtools"):
                     print(
-                        "bedtools in the environemnt PATH either is",
+                        "bedtools in the environemnt PATH is either",
                         "older than v.2.30.0 or doesn't exist.",
                         "\nBiopython will be used.",
                     )
@@ -753,14 +753,14 @@ def make_spliceu_txome(
                 # in this case, there's nowhere else to check
                 # so give up on bedtools
                 print(
-                    "bedtools in the environemnt PATH either is",
+                    "bedtools in the environemnt PATH is either",
                     "older than v.2.30.0 or doesn't exist.",
                     "\nBiopython will be used.",
                 )
                 no_bt = True
             else:
                 print(
-                    "bedtools specified by bt_path either is",
+                    "bedtools specified by bt_path is either",
                     "older than v.2.30.0 or doesn't exist.",
                     "\nTry finding bedtools in the environmental PATH.",
                 )
@@ -768,7 +768,7 @@ def make_spliceu_txome(
                 # fallback to biopython
                 if not check_bedtools_version("bedtools"):
                     print(
-                        "bedtools in the environemnt PATH either is",
+                        "bedtools in the environemnt PATH is either",
                         "older than v.2.30.0 or doesn't exist.",
                         "\nBiopython will be used.",
                     )
