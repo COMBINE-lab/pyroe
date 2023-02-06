@@ -274,7 +274,7 @@ def check_gr(gr, output_dir):
     # 2. using exons' bounds as the bound of transcripts/genes to extract unspliced sequences
     # 3. write those bounds to the clean gtf file
 
-    if transcript_gr.empty or gene_gr.empty: 
+    if transcript_gr.empty or gene_gr.empty:
         if transcript_gr.empty:
             warnings.warn(
                 "".join(
@@ -284,7 +284,7 @@ def check_gr(gr, output_dir):
                     ]
                 )
             )
-            
+
             transcript_gr = transcript_bound_from_exons
             clean_transcript_gr = transcript_bound_from_exons
             gr = pr.concat([gr, transcript_bound_from_exons])
@@ -314,7 +314,9 @@ def check_gr(gr, output_dir):
         if transcript_gr.length > transcript_bound_from_exons.length:
             # pyranges will ignore it anyway. Here I filter them out manually.
             transcript_gr = transcript_gr[
-                transcript_gr.transcript_id.isin(transcript_bound_from_exons.transcript_id)
+                transcript_gr.transcript_id.isin(
+                    transcript_bound_from_exons.transcript_id
+                )
             ]
 
             # complain
@@ -392,7 +394,9 @@ def check_gr(gr, output_dir):
             set(gene_bound_from_exons.gene_id)
         )
 
-        if not gene_gr[gene_gr.gene_id.isin(intersecting_gs)][["Start", "End"]].df.equals(
+        if not gene_gr[gene_gr.gene_id.isin(intersecting_gs)][
+            ["Start", "End"]
+        ].df.equals(
             gene_bound_from_exons[gene_bound_from_exons.gene_id.isin(intersecting_gs)][
                 ["Start", "End"]
             ].df
