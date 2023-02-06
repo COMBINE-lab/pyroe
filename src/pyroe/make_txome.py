@@ -1090,7 +1090,7 @@ def make_spliceu_txome(
 
             # check return code
             if bt_r.returncode != 0:
-                logging.exception("Bedtools failed.")
+                logging.exception("Bedtools failed.", exc_info=True)
 
             # parse temp fasta file to concat exons of each transcript
             ei_parser = SeqIO.parse(temp_fa, "fasta")
