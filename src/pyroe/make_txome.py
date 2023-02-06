@@ -11,7 +11,7 @@ from Bio.SeqFeature import SeqFeature, FeatureLocation
 from Bio.SeqRecord import SeqRecord
 from Bio.SeqIO.FastaIO import SimpleFastaParser
 from packaging.version import parse as parse_version
-
+import logging
 
 def append_extra(extra_infile, out_fa, out_t2g3col, id2name_path, col_status):
     """
@@ -120,28 +120,28 @@ def check_gr(gr, output_dir):
 
     # If required fields are missing, quit
     if "transcript_id" not in gr.columns:
-        raise ValueError(
-            "The input GTF file doesn't contain transcript_id metadata field; Cannot proceed."
+        logging.critical(
+            " The input GTF file doesn't contain transcript_id metadata field; Cannot proceed."
         )
 
     if "Feature" not in gr.columns:
-        raise ValueError(
-            "The input GTF file doesn't contain feature field; Cannot proceed."
+        logging.critical(
+            " The input GTF file doesn't contain feature field; Cannot proceed."
         )
 
     if "gene_id" not in gr.columns:
         # use gene_name as gene_id if exists, return an error otherwise
         if "gene_name" not in gr.columns:
-            raise ValueError(
-                "The input GTF file doesn't contain gene_id and gene_name field; Cannot proceed."
+            logging.error(
+                " The input GTF file doesn't contain gene_id and gene_name metadata field; Cannot proceed."
             )
         else:
-            warnings.warn("gene_id field does not exist, use gene_name as gene_id.")
+            logging.warning(" The gene_id field does not exist; Imputing using gene_name.")
             gene_id = pd.Series(data=gr.gene_name, name="gene_id")
             gr = gr.insert(gene_id)
 
     if "gene_name" not in gr.columns:
-        warnings.warn("gene_name field does not exist, use gene_id as gene_name.")
+        logging.warning("The gene_name field does not exist; Imputing using gene_id.")
         gene_name = pd.Series(data=gr.gene_id, name="gene_name")
         gr = gr.insert(gene_name)
 
@@ -167,10 +167,10 @@ def check_gr(gr, output_dir):
         clean_gr = gr[np.logical_and(gr.transcript_id.notnull(), gr.Feature != "gene")]
         clean_gr.to_gtf(clean_gtf_path)
         # Then, raise a value error
-        raise ValueError(
+        logging.critical(
             "".join(
                 [
-                    f"Found missing value in exons' transcript ID; Cannot proceed."
+                    " Found missing value in exons' transcript ID; Cannot proceed."
                     f" An clean GTF file without missing transcript_id records is written to {clean_gtf_path}.",
                     " If needed, rerun using the clean GTF file",
                 ]
@@ -226,7 +226,7 @@ def check_gr(gr, output_dir):
             gene_name_missing_msg = ""
 
         # write the warning message
-        warnings.warn(
+        logging.warning(
             "".join(
                 [
                     missing_record_msg,
@@ -276,11 +276,11 @@ def check_gr(gr, output_dir):
 
     if transcript_gr.empty or gene_gr.empty:
         if transcript_gr.empty:
-            warnings.warn(
+            logging.warning(
                 "".join(
                     [
-                        "The given GTF file doesn't have transcript feature records.",
-                        " Imputed using exon feature records.",
+                        " The given GTF file doesn't have transcript feature records;",
+                        " Imputing using exon feature records.",
                     ]
                 )
             )
@@ -290,11 +290,11 @@ def check_gr(gr, output_dir):
             gr = pr.concat([gr, transcript_bound_from_exons])
 
         if gene_gr.empty:
-            warnings.warn(
+            logging.warning(
                 "".join(
                     [
-                        " The given GTF file doesn't have gene feature records.",
-                        " Imputed using exon feature records.",
+                        " The given GTF file doesn't have gene feature records;",
+                        " Imputing using exon feature records.",
                     ]
                 )
             )
@@ -320,7 +320,7 @@ def check_gr(gr, output_dir):
             ]
 
             # complain
-            warnings.warn("".join([" Found transcript(s) without exons; Ignored"]))
+            logging.warning(" Found transcript(s) without exons; Ignored.")
             clean_transcript_gr = transcript_bound_from_exons
 
         # if some transcripts don't have features
@@ -328,11 +328,11 @@ def check_gr(gr, output_dir):
             clean_transcript_gr = transcript_bound_from_exons
 
             # complain
-            warnings.warn(
+            logging.warning(
                 "".join(
                     [
-                        " Found transcripts without corresponding transcript feature record.",
-                        " Those transcripts were not used to define unspliced sequences.",
+                        " Found transcripts without corresponding transcript feature record;",
+                        " Those transcripts were not used to extract unspliced sequences.",
                     ]
                 )
             )
@@ -342,7 +342,7 @@ def check_gr(gr, output_dir):
             gene_gr = gene_gr[gene_gr.gene_id.isin(gene_bound_from_exons.gene_id)]
 
             # complain
-            warnings.warn("".join([" Found gene(s) without exons; Ignored"]))
+            logging.warning("".join([" Found gene(s) without exons; Ignored."]))
             clean_gene_gr = gene_bound_from_exons
 
         # if some genes don't have features
@@ -350,11 +350,11 @@ def check_gr(gr, output_dir):
             clean_gene_gr = gene_bound_from_exons
 
             # complain
-            warnings.warn(
+            logging.warning(
                 "".join(
                     [
                         " Found genes without corresponding gene feature record.",
-                        " Those genes were not used to define unspliced sequences.",
+                        " Those genes were not used to extract unspliced sequences.",
                     ]
                 )
             )
@@ -380,11 +380,11 @@ def check_gr(gr, output_dir):
         ):
             clean_transcript_gr = transcript_bound_from_exons
 
-            warnings.warn(
+            logging.warning(
                 "".join(
                     [
-                        " Found transcripts whose boundaries defined in the transcript feature records do not match their exons' bounds.",
-                        " The boundaries defined in the transcript feature records were still used to extract unspliced sequences.",
+                        " Found transcripts whose boundaries defined in their transcript feature record do not match their exons' bounds.",
+                        " However, those boundaries were still used to extract unspliced sequences.",
                     ]
                 )
             )
@@ -403,11 +403,11 @@ def check_gr(gr, output_dir):
         ):
             clean_gene_gr = gene_bound_from_exons
 
-            warnings.warn(
+            logging.warning(
                 "".join(
                     [
                         " Found genes whose boundaries defined in the gene feature records do not equal to their exons' bounds.",
-                        " The boundaries defined in the gene feature records were still used to extract unspliced sequences.",
+                        " However, those boundaries were still used to extract unspliced sequences.",
                     ]
                 )
             )
@@ -416,8 +416,8 @@ def check_gr(gr, output_dir):
     clean_gr = pr.concat([clean_gr, clean_transcript_gr, clean_gene_gr])
     if not clean_gr.empty:
         clean_gr.to_gtf(clean_gtf_path)
-        clean_gtf_msg = f" If needed, please rerun using the clean GTF file in path {clean_gtf_path}."
-        print(clean_gtf_msg)
+        clean_gtf_msg = f" A clean GTF file with all issues fixed is generated at {clean_gtf_path}. If needed, please rerun using this clean GTF file."
+        logging.warning(clean_gtf_msg)
 
     # return imputed gr
     return gr
@@ -436,7 +436,7 @@ def check_bedtools_version(bt_path):
         return found_ver >= req_ver
     except subprocess.CalledProcessError as err:
         # in this case couldn't even run subprocess
-        warnings.warn(f"Cannot check bedtools version.\n{err}")
+        logging.warning(f" Cannot check bedtools version. The error message was: {err}")
         return False
 
 
@@ -453,7 +453,6 @@ def make_splici_txome(
     no_bt=False,
     bt_path="bedtools",
     no_flanking_merge=False,
-    write_clean_gtf=False,
 ):
     """
     Construct the splici (spliced + introns) transcriptome for alevin-fry.
@@ -530,15 +529,15 @@ def make_splici_txome(
     flank_length = read_length - flank_trim_length
 
     if flank_length < 0:
-        raise ValueError("Flank trim length cannot be larger than read length!")
+        logging.critical(" Flank trim length cannot be larger than read length!")
 
     # check fasta file
     if not os.path.isfile(genome_path):
-        raise IOError("Cannot open the input fasta file!")
+        logging.critical(" Cannot open the input fasta file!")
 
     # check gtf file
     if not os.path.isfile(gtf_path):
-        raise IOError("Cannot open the input gtf file!")
+        logging.critical(" Cannot open the input gtf file!")
 
     # check bedtools
     if not no_bt:
@@ -549,31 +548,34 @@ def make_splici_txome(
             if bt_path == "bedtools":
                 # in this case, there's nowhere else to check
                 # so give up on bedtools
-                print(
-                    "bedtools in the environemnt PATH is either",
-                    "older than v.2.30.0 or doesn't exist.",
-                    "\nBiopython will be used.",
+                logging.warning("".join([
+                    " Bedtools in the environemnt PATH is either",
+                    " older than v.2.30.0 or doesn't exist.",
+                    " Biopython will be used to extract sequences.",
+                    
+                ])
                 )
                 no_bt = True
             else:
-                print(
-                    "bedtools specified by bt_path is either",
-                    "older than v.2.30.0 or doesn't exist.",
-                    "\nTry finding bedtools in the environmental PATH.",
+                logging.warning(
+                    " Bedtools specified by bt_path is either",
+                    " older than v.2.30.0 or doesn't exist.",
+                    " Trying to find bedtools in the environmental PATH."
                 )
                 # if it's not ok at the standard system path
                 # fallback to biopython
                 if not check_bedtools_version("bedtools"):
-                    print(
-                        "bedtools in the environemnt PATH is either",
-                        "older than v.2.30.0 or doesn't exist.",
-                        "\nBiopython will be used.",
+                    logging.warning("".join([
+                        " Bedtools in the environemnt PATH is either",
+                        " older than v.2.30.0 or doesn't exist.",
+                        " Biopython will be used to extract sequences.",
+                    ])
                     )
                     no_bt = True
                 # found it at the system path
                 else:
                     bt_path = "bedtools"
-                    print("Using bedtools in the environmental PATH.")
+                    logging.warning(" Using bedtools in the environmental PATH.")
 
     # create out folder and temp folder inside
     # create output folder
@@ -589,10 +591,14 @@ def make_splici_txome(
     # load gtf
     try:
         gr = pr.read_gtf(gtf_path)
-    except ValueError:
+    except ValueError as err:
         # in this case couldn't even read the GTF file
-        raise RuntimeError(
-            "PyRanges failed to parse the input GTF file. Please check the PyRanges documentation for the expected GTF format constraints.\nhttps://pyranges.readthedocs.io/en/latest/autoapi/pyranges/readers/index.html?highlight=read_gtf#pyranges.readers.read_gtf"
+        logging.error("".join([
+            " PyRanges failed to parse the input GTF file.",
+            " Please check the PyRanges documentation for the expected GTF format constraints at",
+            " https://pyranges.readthedocs.io/en/latest/autoapi/pyranges/readers/index.html?highlight=read_gtf#pyranges.readers.read_gtf .",
+            f" The error message was: {str(err)}"
+        ])
         )
 
     # check the validity of gr
@@ -606,7 +612,7 @@ def make_splici_txome(
     # get introns
     # the introns() function uses inplace=True argument from pandas,
     # which will trigger an FutureWarning.
-    warnings.simplefilter(action="ignore", category=FutureWarning)
+    # warnings.simplefilter(action="ignore", category=FutureWarning)
     introns = gr.features.introns(by="transcript")
     introns.Name = introns.gene_id
 
@@ -640,12 +646,20 @@ def make_splici_txome(
             title.split()[0]: len(sequence)
             for title, sequence in SimpleFastaParser(fasta_file)
         }
-    introns = pr.gf.genome_bounds(introns, chromsize, clip=True)
-
-    # deduplicate introns
+        
+        
+    # in case the genome and gene annotaitons do not match
+    # try it and raise value error if this fails
+    try: 
+        introns = pr.gf.genome_bounds(introns, chromsize, clip=True)
+    except Exception as err:
+        logging.error("".join([" Failed to refine intron bounds using genome bounds.",
+                               " Please check if the input genome FASTA file and GTF file match each other.", 
+                               f" The error message was: {str(err)}",
+                              ]),
+                      exc_info=True)    # deduplicate introns
     if dedup_seqs:
         introns.drop_duplicate_positions()
-
     # add splice status for introns
     introns.splice_status = "U"
 
@@ -708,7 +722,7 @@ def make_splici_txome(
 
             # check return code
             if bt_r.returncode != 0:
-                raise ValueError("Bedtools failed.")
+                logging.exception(" Bedtools failed.", exc_info=True)
 
             # parse temp fasta file to concat exons of each transcript
             ei_parser = SeqIO.parse(temp_fa, "fasta")
@@ -737,7 +751,7 @@ def make_splici_txome(
             shutil.rmtree(temp_dir, ignore_errors=True)
         except Exception as err:
             no_bt = True
-            warnings.warn(f"Bedtools failed. Use biopython instead.\n{err}")
+            logging.warning(f" Bedtools failed; Using biopython instead. The error message was: \n{err}")
             shutil.rmtree(temp_dir, ignore_errors=True)
 
     if no_bt:
@@ -900,11 +914,11 @@ def make_spliceu_txome(
     # Preparation
     # check fasta file
     if not os.path.isfile(genome_path):
-        raise IOError("Cannot open the input fasta file!")
+        logging.critical(" Cannot open the input fasta file!")
 
     # check gtf file
     if not os.path.isfile(gtf_path):
-        raise IOError("Cannot open the input gtf file!")
+        logging.critical(" Cannot open the input gtf file!")
 
     # check bedtools
     if not no_bt:
@@ -915,31 +929,34 @@ def make_spliceu_txome(
             if bt_path == "bedtools":
                 # in this case, there's nowhere else to check
                 # so give up on bedtools
-                print(
-                    "bedtools in the environemnt PATH is either",
-                    "older than v.2.30.0 or doesn't exist.",
-                    "\nBiopython will be used.",
+                logging.warning("".join([
+                    " Bedtools in the environemnt PATH is either",
+                    " older than v.2.30.0 or doesn't exist.",
+                    " Biopython will be used.",
+                ])
                 )
                 no_bt = True
             else:
-                print(
-                    "bedtools specified by bt_path is either",
+                logging.warning("".join([
+                    "Bedtools specified by bt_path is either",
                     "older than v.2.30.0 or doesn't exist.",
-                    "\nTry finding bedtools in the environmental PATH.",
+                    "Trying to find bedtools in the environmental PATH.",
+                ])
                 )
                 # if it's not ok at the standard system path
                 # fallback to biopython
                 if not check_bedtools_version("bedtools"):
-                    print(
-                        "bedtools in the environemnt PATH is either",
-                        "older than v.2.30.0 or doesn't exist.",
-                        "\nBiopython will be used.",
+                    logging.warning("".join([
+                        " Bedtools in the environemnt PATH is either",
+                        " older than v.2.30.0 or doesn't exist.",
+                        " Biopython will be used.",
+                        ])
                     )
                     no_bt = True
                 # found it at the system path
                 else:
                     bt_path = "bedtools"
-                    print("Using bedtools in the environmental PATH.")
+                    logging.warning(" Using bedtools in the environmental PATH.")
 
     # create out folder and temp folder inside
     # create output folder
@@ -956,11 +973,15 @@ def make_spliceu_txome(
     # load gtf
     try:
         gr = pr.read_gtf(gtf_path)
-    except ValueError:
+    except ValueError as err:
         # in this case couldn't even run subprocess
-        raise RuntimeError(
-            "PyRanges failed to parse the input GTF file. Please check the PyRanges documentation for the expected GTF format constraints.\nhttps://pyranges.readthedocs.io/en/latest/autoapi/pyranges/readers/index.html?highlight=read_gtf#pyranges.readers.read_gtf"
-        )
+        logging.error(''.join([" PyRanges failed to parse the input GTF file.",
+                               " Please check the PyRanges documentation for ",
+                               " the expected GTF format constraints at",
+                               " https://pyranges.readthedocs.io/en/latest/autoapi/pyranges/readers/index.html?highlight=read_gtf#pyranges.readers.read_gtf .",
+                               f" The error message was: {str(err)}"]),
+                      exc_info=True
+            )
 
     # check the validity of gr
     gr = check_gr(gr, output_dir)
@@ -1039,7 +1060,7 @@ def make_spliceu_txome(
 
             # check return code
             if bt_r.returncode != 0:
-                raise ValueError("Bedtools failed.")
+                logging.exception("Bedtools failed.")
 
             # parse temp fasta file to concat exons of each transcript
             ei_parser = SeqIO.parse(temp_fa, "fasta")
@@ -1068,7 +1089,7 @@ def make_spliceu_txome(
             shutil.rmtree(temp_dir, ignore_errors=True)
         except Exception as err:
             no_bt = True
-            warnings.warn(f"Bedtools failed. Use biopython instead.\n{err}")
+            logging.warning(f" Bedtools failed; Using biopython instead. The error message was: {err}")
             shutil.rmtree(temp_dir, ignore_errors=True)
 
     if no_bt:
