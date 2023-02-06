@@ -253,14 +253,17 @@ def check_gr(gr, output_dir):
     # from exons
     transcript_bound_from_exons = (
         gr[gr.Feature == "exon"]
-        .boundaries(group_by=["Feature", "transcript_id", "gene_id", "gene_name"])
+        .boundaries(group_by=["transcript_id", "gene_id", "gene_name"])
         .sort(["transcript_id"])
     )
+    transcript_bound_from_exons.Feature = "transcript"
+
     gene_bound_from_exons = (
         gr[gr.Feature == "exon"]
-        .boundaries(group_by=["Feature", "gene_id", "gene_name"])
+        .boundaries(group_by=["gene_id", "gene_name"])
         .sort(["gene_id"])
     )
+    gene_bound_from_exons.Feature = "gene"
 
     # define clean transcript and gene gr
     clean_transcript_gr = pr.PyRanges()
@@ -271,138 +274,139 @@ def check_gr(gr, output_dir):
     # 2. using exons' bounds as the bound of transcripts/genes to extract unspliced sequences
     # 3. write those bounds to the clean gtf file
 
-    if transcript_gr.empty:
-        warnings.warn(
-            "".join(
-                [
-                    "The given GTF file doesn't have transcript feature records.",
-                    " Imputed using exon feature records.",
-                ]
+    if transcript_gr.empty or gene_gr.empty: 
+        if transcript_gr.empty:
+            warnings.warn(
+                "".join(
+                    [
+                        "The given GTF file doesn't have transcript feature records.",
+                        " Imputed using exon feature records.",
+                    ]
+                )
             )
+            
+            transcript_gr = transcript_bound_from_exons
+            clean_transcript_gr = transcript_bound_from_exons
+            gr = pr.concat([gr, transcript_bound_from_exons])
+
+        if gene_gr.empty:
+            warnings.warn(
+                "".join(
+                    [
+                        " The given GTF file doesn't have gene feature records.",
+                        " Imputed using exon feature records.",
+                    ]
+                )
+            )
+
+            gene_gr = gene_bound_from_exons
+            clean_gene_gr = gene_bound_from_exons
+            gr = pr.concat([gr, gene_bound_from_exons])
+    else:
+        # If some of them are missing, we report a warning
+        # and use the transcripts' bounds in the original GTF file to extract introns,
+        # but impute the missing annotations in the clean GTF file.
+        # We will say in the warning message that if the users want to
+        # use the annotations we generated,
+        # they should rerun pyroe using the clean GTF file.
+
+        # if some transcripts don't have exons
+        if transcript_gr.length > transcript_bound_from_exons.length:
+            # pyranges will ignore it anyway. Here I filter them out manually.
+            transcript_gr = transcript_gr[
+                transcript_gr.transcript_id.isin(transcript_bound_from_exons.transcript_id)
+            ]
+
+            # complain
+            warnings.warn("".join([" Found transcript(s) without exons; Ignored"]))
+            clean_transcript_gr = transcript_bound_from_exons
+
+        # if some transcripts don't have features
+        elif transcript_gr.length < transcript_bound_from_exons.length:
+            clean_transcript_gr = transcript_bound_from_exons
+
+            # complain
+            warnings.warn(
+                "".join(
+                    [
+                        " Found transcripts without corresponding transcript feature record.",
+                        " Those transcripts were not used to define unspliced sequences.",
+                    ]
+                )
+            )
+
+        # if some genes don't have exons
+        if gene_gr.length > gene_bound_from_exons.length:
+            gene_gr = gene_gr[gene_gr.gene_id.isin(gene_bound_from_exons.gene_id)]
+
+            # complain
+            warnings.warn("".join([" Found gene(s) without exons; Ignored"]))
+            clean_gene_gr = gene_bound_from_exons
+
+        # if some genes don't have features
+        elif gene_gr.length < gene_bound_from_exons.length:
+            clean_gene_gr = gene_bound_from_exons
+
+            # complain
+            warnings.warn(
+                "".join(
+                    [
+                        " Found genes without corresponding gene feature record.",
+                        " Those genes were not used to define unspliced sequences.",
+                    ]
+                )
+            )
+
+        # If the transcripts'/genes' bounds defined in the original GTF file
+        # and those found manually (using exons' bounds) are different,
+        # we report a warning and extract unspliced sequences
+        # using the transcripts'/genes' annotation in the original GTF file,
+        # but use manually defined transcript annotations (from their exons' bounds)
+        # in the clean GTF file.
+
+        # transcripts
+        intersecting_txs = set(transcript_gr.transcript_id).intersection(
+            set(transcript_bound_from_exons.transcript_id)
         )
 
-        transcript_bound_from_exons.Feature = "transcript"
-        gr = pr.concat([gr, transcript_bound_from_exons])
-        clean_transcript_gr = transcript_bound_from_exons
-
-    if gene_gr.empty:
-        warnings.warn(
-            "".join(
-                [
-                    " The given GTF file doesn't have gene feature records.",
-                    " Imputed using exon feature records.",
-                ]
-            )
-        )
-
-        gene_bound_from_exons.Feature = "gene"
-        gr = pr.concat([gr, gene_bound_from_exons])
-        clean_gene_gr = gene_bound_from_exons
-
-    # If some of them are missing, we report a warning
-    # and use the transcripts' bounds in the original GTF file to extract introns,
-    # but impute the missing annotations in the clean GTF file.
-    # We will say in the warning message that if the users want to
-    # use the annotations we generated,
-    # they should rerun pyroe using the clean GTF file.
-
-    # if some transcripts don't have exons
-    if transcript_gr.length > transcript_bound_from_exons.length:
-        # pyranges will ignore it anyway. Here I filter them out manually.
-        transcript_gr = transcript_gr[
-            transcript_gr.transcript_id.isin(transcript_bound_from_exons.transcript_id)
-        ]
-
-        # complain
-        warnings.warn("".join([" Found transcript(s) without exons; Ignored"]))
-        clean_transcript_gr = transcript_bound_from_exons
-
-    # if some transcripts don't have features
-    elif transcript_gr.length < transcript_bound_from_exons.length:
-        clean_transcript_gr = transcript_bound_from_exons
-
-        # complain
-        warnings.warn(
-            "".join(
-                [
-                    " Found transcripts without corresponding transcript feature record.",
-                    " Those transcripts were not used to define unspliced sequences.",
-                ]
-            )
-        )
-
-    # if some genes don't have exons
-    if gene_gr.length > gene_bound_from_exons.length:
-        gene_gr = gene_gr[gene_gr.gene_id.isin(gene_bound_from_exons.gene_id)]
-
-        # complain
-        warnings.warn("".join([" Found gene(s) without exons; Ignored"]))
-        clean_gene_gr = gene_bound_from_exons
-
-    # if some genes don't have features
-    elif gene_gr.length < gene_bound_from_exons.length:
-        clean_gene_gr = gene_bound_from_exons
-
-        # complain
-        warnings.warn(
-            "".join(
-                [
-                    " Found genes without corresponding gene feature record.",
-                    " Those genes were not used to define unspliced sequences.",
-                ]
-            )
-        )
-
-    # If the transcripts'/genes' bounds defined in the original GTF file
-    # and those found manually (using exons' bounds) are different,
-    # we report a warning and extract unspliced sequences
-    # using the transcripts'/genes' annotation in the original GTF file,
-    # but use manually defined transcript annotations (from their exons' bounds)
-    # in the clean GTF file.
-
-    # transcripts
-    intersecting_txs = set(transcript_gr.transcript_id).intersection(
-        set(transcript_bound_from_exons.transcript_id)
-    )
-
-    if not transcript_gr[transcript_gr.transcript_id.isin(intersecting_txs)][
-        ["Start", "End"]
-    ].df.equals(
-        transcript_bound_from_exons[
-            transcript_bound_from_exons.transcript_id.isin(intersecting_txs)
-        ][["Start", "End"]].df
-    ):
-        clean_transcript_gr = transcript_bound_from_exons
-
-        warnings.warn(
-            "".join(
-                [
-                    " Found transcripts whose boundaries defined in the transcript feature records do not match their exons' bounds.",
-                    " The boundaries defined in the transcript feature records were still used to extract unspliced sequences.",
-                ]
-            )
-        )
-
-    # genes
-    intersecting_gs = set(gene_gr.gene_id).intersection(
-        set(gene_bound_from_exons.gene_id)
-    )
-
-    if not gene_gr[gene_gr.gene_id.isin(intersecting_gs)][["Start", "End"]].df.equals(
-        gene_bound_from_exons[gene_bound_from_exons.gene_id.isin(intersecting_gs)][
+        if not transcript_gr[transcript_gr.transcript_id.isin(intersecting_txs)][
             ["Start", "End"]
-        ].df
-    ):
-        clean_gene_gr = gene_bound_from_exons
+        ].df.equals(
+            transcript_bound_from_exons[
+                transcript_bound_from_exons.transcript_id.isin(intersecting_txs)
+            ][["Start", "End"]].df
+        ):
+            clean_transcript_gr = transcript_bound_from_exons
 
-        warnings.warn(
-            "".join(
-                [
-                    " Found genes whose boundaries defined in the gene feature records do not equal to their exons' bounds.",
-                    " The boundaries defined in the gene feature records were still used to extract unspliced sequences.",
-                ]
+            warnings.warn(
+                "".join(
+                    [
+                        " Found transcripts whose boundaries defined in the transcript feature records do not match their exons' bounds.",
+                        " The boundaries defined in the transcript feature records were still used to extract unspliced sequences.",
+                    ]
+                )
             )
+
+        # genes
+        intersecting_gs = set(gene_gr.gene_id).intersection(
+            set(gene_bound_from_exons.gene_id)
         )
+
+        if not gene_gr[gene_gr.gene_id.isin(intersecting_gs)][["Start", "End"]].df.equals(
+            gene_bound_from_exons[gene_bound_from_exons.gene_id.isin(intersecting_gs)][
+                ["Start", "End"]
+            ].df
+        ):
+            clean_gene_gr = gene_bound_from_exons
+
+            warnings.warn(
+                "".join(
+                    [
+                        " Found genes whose boundaries defined in the gene feature records do not equal to their exons' bounds.",
+                        " The boundaries defined in the gene feature records were still used to extract unspliced sequences.",
+                    ]
+                )
+            )
 
     # if clean_gr is not empty, write it
     clean_gr = pr.concat([clean_gr, clean_transcript_gr, clean_gene_gr])
@@ -873,14 +877,6 @@ def make_spliceu_txome(
     bt_path : str
         The path to bedtools v2.30.0 or greater if it is not in the environment PATH.
 
-    write_clean_gtf : bool (default: `False`)
-        If true, when the input GTF contains invalid records, a clean GTF
-        file `clean_gtf.gtf` with these invalid records removed will be
-        exported to the output dir.
-        An invalid record is an exon record without an transcript ID
-        in the `transcript_id` field.
-
-
     Returns
     -------
     Nothing will be returned. The spliceu reference files will be written
@@ -963,7 +959,7 @@ def make_spliceu_txome(
         )
 
     # check the validity of gr
-    gr = check_gr(gr, output_dir, write_clean_gtf)
+    gr = check_gr(gr, output_dir)
 
     # write gene id to name tsv file
     gr.df[["gene_id", "gene_name"]].drop_duplicates().to_csv(
@@ -983,7 +979,6 @@ def make_spliceu_txome(
 
     exons.Name = exons.transcript_id
     exons.Gene = exons.gene_id
-    exons = exons.drop(exons.columns[~exons.columns.isin(unspliced.columns)].tolist())
     exons = exons.sort(["Name", "Start", "End"])
     # add splice status for exons
     exons.splice_status = "S"
