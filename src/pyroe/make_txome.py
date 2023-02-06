@@ -1,5 +1,4 @@
 import os
-import warnings
 import subprocess
 import shutil
 import pyranges as pr
@@ -12,6 +11,7 @@ from Bio.SeqRecord import SeqRecord
 from Bio.SeqIO.FastaIO import SimpleFastaParser
 from packaging.version import parse as parse_version
 import logging
+
 
 def append_extra(extra_infile, out_fa, out_t2g3col, id2name_path, col_status):
     """
@@ -136,7 +136,9 @@ def check_gr(gr, output_dir):
                 " The input GTF file doesn't contain gene_id and gene_name metadata field; Cannot proceed."
             )
         else:
-            logging.warning(" The gene_id field does not exist; Imputing using gene_name.")
+            logging.warning(
+                " The gene_id field does not exist; Imputing using gene_name."
+            )
             gene_id = pd.Series(data=gr.gene_name, name="gene_id")
             gr = gr.insert(gene_id)
 
@@ -548,28 +550,33 @@ def make_splici_txome(
             if bt_path == "bedtools":
                 # in this case, there's nowhere else to check
                 # so give up on bedtools
-                logging.warning("".join([
-                    " Bedtools in the environemnt PATH is either",
-                    " older than v.2.30.0 or doesn't exist.",
-                    " Biopython will be used to extract sequences.",
-                    
-                ])
+                logging.warning(
+                    "".join(
+                        [
+                            " Bedtools in the environemnt PATH is either",
+                            " older than v.2.30.0 or doesn't exist.",
+                            " Biopython will be used to extract sequences.",
+                        ]
+                    )
                 )
                 no_bt = True
             else:
                 logging.warning(
                     " Bedtools specified by bt_path is either",
                     " older than v.2.30.0 or doesn't exist.",
-                    " Trying to find bedtools in the environmental PATH."
+                    " Trying to find bedtools in the environmental PATH.",
                 )
                 # if it's not ok at the standard system path
                 # fallback to biopython
                 if not check_bedtools_version("bedtools"):
-                    logging.warning("".join([
-                        " Bedtools in the environemnt PATH is either",
-                        " older than v.2.30.0 or doesn't exist.",
-                        " Biopython will be used to extract sequences.",
-                    ])
+                    logging.warning(
+                        "".join(
+                            [
+                                " Bedtools in the environemnt PATH is either",
+                                " older than v.2.30.0 or doesn't exist.",
+                                " Biopython will be used to extract sequences.",
+                            ]
+                        )
                     )
                     no_bt = True
                 # found it at the system path
@@ -593,12 +600,15 @@ def make_splici_txome(
         gr = pr.read_gtf(gtf_path)
     except ValueError as err:
         # in this case couldn't even read the GTF file
-        logging.error("".join([
-            " PyRanges failed to parse the input GTF file.",
-            " Please check the PyRanges documentation for the expected GTF format constraints at",
-            " https://pyranges.readthedocs.io/en/latest/autoapi/pyranges/readers/index.html?highlight=read_gtf#pyranges.readers.read_gtf .",
-            f" The error message was: {str(err)}"
-        ])
+        logging.error(
+            "".join(
+                [
+                    " PyRanges failed to parse the input GTF file.",
+                    " Please check the PyRanges documentation for the expected GTF format constraints at",
+                    " https://pyranges.readthedocs.io/en/latest/autoapi/pyranges/readers/index.html?highlight=read_gtf#pyranges.readers.read_gtf .",
+                    f" The error message was: {str(err)}",
+                ]
+            )
         )
 
     # check the validity of gr
@@ -646,18 +656,22 @@ def make_splici_txome(
             title.split()[0]: len(sequence)
             for title, sequence in SimpleFastaParser(fasta_file)
         }
-        
-        
+
     # in case the genome and gene annotaitons do not match
     # try it and raise value error if this fails
-    try: 
+    try:
         introns = pr.gf.genome_bounds(introns, chromsize, clip=True)
     except Exception as err:
-        logging.error("".join([" Failed to refine intron bounds using genome bounds.",
-                               " Please check if the input genome FASTA file and GTF file match each other.", 
-                               f" The error message was: {str(err)}",
-                              ]),
-                      exc_info=True)    # deduplicate introns
+        logging.error(
+            "".join(
+                [
+                    " Failed to refine intron bounds using genome bounds.",
+                    " Please check if the input genome FASTA file and GTF file match each other.",
+                    f" The error message was: {str(err)}",
+                ]
+            ),
+            exc_info=True,
+        )  # deduplicate introns
     if dedup_seqs:
         introns.drop_duplicate_positions()
     # add splice status for introns
@@ -751,7 +765,9 @@ def make_splici_txome(
             shutil.rmtree(temp_dir, ignore_errors=True)
         except Exception as err:
             no_bt = True
-            logging.warning(f" Bedtools failed; Using biopython instead. The error message was: \n{err}")
+            logging.warning(
+                f" Bedtools failed; Using biopython instead. The error message was: \n{err}"
+            )
             shutil.rmtree(temp_dir, ignore_errors=True)
 
     if no_bt:
@@ -929,28 +945,37 @@ def make_spliceu_txome(
             if bt_path == "bedtools":
                 # in this case, there's nowhere else to check
                 # so give up on bedtools
-                logging.warning("".join([
-                    " Bedtools in the environemnt PATH is either",
-                    " older than v.2.30.0 or doesn't exist.",
-                    " Biopython will be used.",
-                ])
+                logging.warning(
+                    "".join(
+                        [
+                            " Bedtools in the environemnt PATH is either",
+                            " older than v.2.30.0 or doesn't exist.",
+                            " Biopython will be used.",
+                        ]
+                    )
                 )
                 no_bt = True
             else:
-                logging.warning("".join([
-                    "Bedtools specified by bt_path is either",
-                    "older than v.2.30.0 or doesn't exist.",
-                    "Trying to find bedtools in the environmental PATH.",
-                ])
+                logging.warning(
+                    "".join(
+                        [
+                            "Bedtools specified by bt_path is either",
+                            "older than v.2.30.0 or doesn't exist.",
+                            "Trying to find bedtools in the environmental PATH.",
+                        ]
+                    )
                 )
                 # if it's not ok at the standard system path
                 # fallback to biopython
                 if not check_bedtools_version("bedtools"):
-                    logging.warning("".join([
-                        " Bedtools in the environemnt PATH is either",
-                        " older than v.2.30.0 or doesn't exist.",
-                        " Biopython will be used.",
-                        ])
+                    logging.warning(
+                        "".join(
+                            [
+                                " Bedtools in the environemnt PATH is either",
+                                " older than v.2.30.0 or doesn't exist.",
+                                " Biopython will be used.",
+                            ]
+                        )
                     )
                     no_bt = True
                 # found it at the system path
@@ -975,13 +1000,18 @@ def make_spliceu_txome(
         gr = pr.read_gtf(gtf_path)
     except ValueError as err:
         # in this case couldn't even run subprocess
-        logging.error(''.join([" PyRanges failed to parse the input GTF file.",
-                               " Please check the PyRanges documentation for ",
-                               " the expected GTF format constraints at",
-                               " https://pyranges.readthedocs.io/en/latest/autoapi/pyranges/readers/index.html?highlight=read_gtf#pyranges.readers.read_gtf .",
-                               f" The error message was: {str(err)}"]),
-                      exc_info=True
-            )
+        logging.error(
+            "".join(
+                [
+                    " PyRanges failed to parse the input GTF file.",
+                    " Please check the PyRanges documentation for ",
+                    " the expected GTF format constraints at",
+                    " https://pyranges.readthedocs.io/en/latest/autoapi/pyranges/readers/index.html?highlight=read_gtf#pyranges.readers.read_gtf .",
+                    f" The error message was: {str(err)}",
+                ]
+            ),
+            exc_info=True,
+        )
 
     # check the validity of gr
     gr = check_gr(gr, output_dir)
@@ -1089,7 +1119,9 @@ def make_spliceu_txome(
             shutil.rmtree(temp_dir, ignore_errors=True)
         except Exception as err:
             no_bt = True
-            logging.warning(f" Bedtools failed; Using biopython instead. The error message was: {err}")
+            logging.warning(
+                f" Bedtools failed; Using biopython instead. The error message was: {err}"
+            )
             shutil.rmtree(temp_dir, ignore_errors=True)
 
     if no_bt:
