@@ -12,7 +12,15 @@ from Bio.SeqIO.FastaIO import SimpleFastaParser
 from packaging.version import parse as parse_version
 import logging
 
-bed_required_fields = ['Chromosome', 'Start', 'End', 'Strand', 'Name', 'Gene','splice_status']
+bed_required_fields = [
+    "Chromosome",
+    "Start",
+    "End",
+    "Strand",
+    "Name",
+    "Gene",
+    "splice_status",
+]
 
 
 def append_extra(extra_infile, out_fa, out_t2g3col, id2name_path, col_status):
@@ -690,7 +698,7 @@ def make_splici_txome(
     exons = exons.sort(["Name", "Start", "End"])
     # add splice status for exons
     exons.splice_status = "S"
-    # keep only required fields 
+    # keep only required fields
     exons = exons[bed_required_fields]
 
     # concat spliced transcripts and introns as splici
@@ -1043,7 +1051,7 @@ def make_spliceu_txome(
     exons = exons.sort(["Name", "Start", "End"])
     # add splice status for exons
     exons.splice_status = "S"
-    # keep only required fields 
+    # keep only required fields
     exons = exons[bed_required_fields]
 
     # concat spliced transcripts and unspliced as spliceu
