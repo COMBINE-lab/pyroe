@@ -32,8 +32,7 @@ conda install pyroe
 
 with the appropriate bioconda channel in the conda channel list.
 
-
-## Preparing a *spliced + intronic (_splici_)* index for quantification with alevin-fry
+### Preparing a *spliced + intronic (_splici_)* reference for quantification with alevin-fry
 
 The USA mode in alevin-fry requires a special index reference. Specifically, it requires either a spliced + intronic (*splici*)reference or a spliced + unspliced (*spliceu*) reference. The spliced + intronic (*splici*) reference contains the spliced transcripts plus the (merged and collapsed) intronic sequences of each gene. The `make_splici_txome()` function is designed to make the spliced + intronic reference by taking a genome FASTA file and a gene annotation GTF file as the input. Details about the spliced + intronic can be found in Section S2 of the supplementary file of the [alevin-fry paper](https://www.nature.com/articles/s41592-022-01408-3). To run pyroe, you also need to specify the read length argument `read_length` of the experiment you are working on and the flank trimming length `flank_trim_length`. A final flank length will be computed as the difference between the read_length and flank trimming length and will be attached to the ends of each intron to absorb the intron-exon junctional reads. To make the splici index using `pyroe`, one can call `pyroe make-spliced+intronic` or its alias `pyroe make-splici`.
 
@@ -131,6 +130,19 @@ options:
                         if encountered invalid records.
 ```
 
+## Notes on the input gene annotation GTF files 
+Pyroe build expanded transcriptome references, the spliced + intronic (*splici*) transcriptome reference and the spliced + unspliced (*spliceu*) transcriptome reference based on a genome build FASTA file and a gene annotation GTF file.
+
+The input GTF file will be processed before extracting unspliced sequences. If pyroe finds invalid records, a `clean_gtf.gtf` file will be generated in the specified output directory.  **Note** : The features extracted in the spliced + unspliced transcriptome will not necessarily be those present in the `clean_gtf.gtf` file — as this command will prefer the input in the user-provided file wherever possible.  More specifically:
+1. Each non-gene record has to have a valid transcript_id. If this is not satisfied, it returns an error. Only the records with a valid transcript_id will be written to the clean_gtf.gtf.
+2. For gene_id and gene_name metadata field, 
+  - If these two fields are entirely missing in the GTF file, An error will be returned. At the same time, in the clean_gtf.gtf, the two fields will be imputed using the transcript_id fields.
+  - If one of these two fields is completely missing, a warning will be generated, and the missing field will be imputed using the other one.
+  - if some records have missing gene_id and/or gene_name, a warning will be printed, and the missing values will be imputed by the following rules: For records miss gene_id or gene_name, impute the missing one using the other one; If both are missing, impute them using transcript_id, which cannot be missing. 
+3. If there is no "transcript" or "gene" feature record, a warning will be printed. Moreover, those missing records will be imputed using the "exon" feature records: The Start and End site of the gene/transcript will be imputed as the bounds of their corresponding exons.
+4. If the boundaries defined in the transcripts'/genes' feature records do not match those implied by their exons' feature records, report a warning but still use transcripts'/genes' feature records to extract unspliced sequences. To be specific, if some but not all transcripts/genes have their corresponding transcripts'/genes' feature records, or the Start and/or End site defined in the transcript/gene feature records do not match the corresponding exons' bounds, then the existing transcripts'/genes' feature records will be used to extract unspliced transcripts. At the same time, in the clean_gtf.gtf, all genes/transcripts that appeared in the exon feature records will have their corresponding transcripts'/genes' feature records, in which the boundaries match the corresponding exons' bounds.  
+
+
 ## Processing alevin-fry quantification result
 
 The quantification result of alevin-fry can be loaded into python by the `load_fry()` function. This function takes a output directory returned by `alevin-fry quant` command as the minimum input, and load the quantification result as an `AnnData` object. When processing USA mode result, it assumes that the data comes from a single-cell RNA-sequencing experiment. If one wants to process single-nucleus RNA-sequencing data or prepare the single-cell data for RNA-velocity analysis, the `output_format` argument should be set as `snRNA` or `velocity` correspondingly. One can also define customized output format, see the Full Usage section for detail.
@@ -171,20 +183,26 @@ returned by alevin-fry.
 
 The following formats are defined:
 
-* "scRNA": \
-    This format is recommended for single cell RNA-sequencing experiments. 
-    It returns a `X` field that contains the S+A count of each gene in each cell without any extra layers.
+* "scRNA": 
+    This format is recommended for single cell RNA-sequencing experiments.
+    It returns a `X` field that contains the S+A count of each gene in each cell,
+    and a `unspliced` field that contains the U count of each gene.
 
-* "snRNA": \
-    This format is recommended for single nucleus RNA-sequencing experiments. 
-    It returns a `X` field that contains the U+S+A count of each gene in each cell without any extra layers.
+* "snRNA", "all" and "U+S+A": 
+    These three formats are the same. They return a `X` field that contains the U+S+A 
+    count of each gene in each cell without any extra layers.
+    It is recommended for single-nucleus RNA-sequencing experiments.
+    CellRanger 7 returns this format for both single-cell and single-nucleus experiments.
 
-* "raw": \
-    This format uses the S count matrix as the `X` field and put the U, S, and A counts into three 
+* "S+A": 
+    It returns a `X` field that contains the S+A count of each gene in each cell with no extra field.
+
+* "raw": 
+    This format uses the S count matrix as the `X` field and put the U, S, and A counts into three
     separate layers, which are "unspliced", "spliced" and "ambiguous".
 
-* "velocity": \
-    This format is the same as "scRNA", except it contains two extra layers: the "spliced" layer, 
+* "velocity": 
+    This format is the same as "scRNA", except it contains two extra layers: the "spliced" layer,
     which contains the S+A counts, and the "unspliced" layer, which contains the U counts.
 
 A custom output format can be defined using a Dictionary specifying the desired format of the output `Anndata` object.  
