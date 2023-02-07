@@ -100,11 +100,6 @@ if __name__ == "__main__":
         action="store_true",
         help="A flag indicates whether flank lengths will be considered when merging introns.",
     )
-    parser_makeSplici.add_argument(
-        "--write-clean-gtf",
-        action="store_true",
-        help="A flag indicates whether a clean gtf will be written if encountered invalid records.",
-    )
 
     # make-spliceu
     parser_makeSpliceu = subparsers.add_parser(
@@ -158,11 +153,6 @@ if __name__ == "__main__":
         "--dedup-seqs",
         action="store_true",
         help="A flag indicates whether identical sequences will be deduplicated.",
-    )
-    parser_makeSpliceu.add_argument(
-        "--write-clean-gtf",
-        action="store_true",
-        help="A flag indicates whether a clean gtf will be written if encountered invalid records.",
     )
 
     # parse available datasets
@@ -274,7 +264,6 @@ if __name__ == "__main__":
             no_bt=args.no_bt,
             bt_path=args.bt_path,
             no_flanking_merge=args.no_flanking_merge,
-            write_clean_gtf=args.write_clean_gtf,
         )
     elif args.command == "make-spliceu":
         make_spliceu_txome(
@@ -287,7 +276,6 @@ if __name__ == "__main__":
             dedup_seqs=args.dedup_seqs,
             no_bt=args.no_bt,
             bt_path=args.bt_path,
-            write_clean_gtf=args.write_clean_gtf,
         )
     elif args.command == "fetch-quant":
         fetch_processed_quant(
