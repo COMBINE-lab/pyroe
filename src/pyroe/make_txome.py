@@ -12,6 +12,16 @@ from Bio.SeqIO.FastaIO import SimpleFastaParser
 from packaging.version import parse as parse_version
 import logging
 
+bed_required_fields = [
+    "Chromosome",
+    "Start",
+    "End",
+    "Strand",
+    "Name",
+    "Gene",
+    "splice_status",
+]
+
 
 def append_extra(extra_infile, out_fa, out_t2g3col, id2name_path, col_status):
     """
@@ -608,7 +618,8 @@ def make_splici_txome(
                     " https://pyranges.readthedocs.io/en/latest/autoapi/pyranges/readers/index.html?highlight=read_gtf#pyranges.readers.read_gtf .",
                     f" The error message was: {str(err)}",
                 ]
-            )
+            ),
+            exc_info=True,
         )
 
     # check the validity of gr
@@ -677,20 +688,21 @@ def make_splici_txome(
     # add splice status for introns
     introns.splice_status = "U"
 
+    introns = introns[bed_required_fields]
+
     # get exons
     exons = gr[gr.Feature == "exon"]
 
     exons.Name = exons.transcript_id
     exons.Gene = exons.gene_id
-    exons = exons.drop(exons.columns[~exons.columns.isin(introns.columns)].tolist())
     exons = exons.sort(["Name", "Start", "End"])
     # add splice status for exons
     exons.splice_status = "S"
+    # keep only required fields
+    exons = exons[bed_required_fields]
 
     # concat spliced transcripts and introns as splici
     splici = pr.concat([exons, introns])
-
-    # splici = splici.sort(["Name", "Start", "End", "Gene"])
 
     # write to files
     # t2g_3col.tsv
@@ -762,13 +774,13 @@ def make_splici_txome(
                 if tid2strand[prev_rec.id] == "-":
                     prev_rec = prev_rec.reverse_complement(id=True, description=True)
                 SeqIO.write(prev_rec, out_handle, "fasta")
-            shutil.rmtree(temp_dir, ignore_errors=True)
+            # shutil.rmtree(temp_dir, ignore_errors=True)
         except Exception as err:
             no_bt = True
             logging.warning(
                 f" Bedtools failed; Using biopython instead. The error message was: \n{err}"
             )
-            shutil.rmtree(temp_dir, ignore_errors=True)
+            # shutil.rmtree(temp_dir, ignore_errors=True)
 
     if no_bt:
         with open(out_fa, "w") as out_handle:
@@ -867,7 +879,6 @@ def make_spliceu_txome(
     dedup_seqs=False,
     no_bt=False,
     bt_path="bedtools",
-    write_clean_gtf=False,
 ):
     """
     Construct the spliceu (spliced + unspliced) transcriptome for alevin-fry.
@@ -1023,20 +1034,25 @@ def make_spliceu_txome(
 
     # get unspliced
     unspliced = gr[gr.Feature == "gene"]
+    # unspliced = gr.boundaries("gene_id")
     unspliced.Name = unspliced.gene_id + "-I"
     unspliced.Gene = unspliced.gene_id
-
     # add splice status for unspliced
     unspliced.splice_status = "U"
+    # keep only required fields
+    unspliced = unspliced[bed_required_fields]
 
     # get exons
     exons = gr[gr.Feature == "exon"]
 
     exons.Name = exons.transcript_id
     exons.Gene = exons.gene_id
+
     exons = exons.sort(["Name", "Start", "End"])
     # add splice status for exons
     exons.splice_status = "S"
+    # keep only required fields
+    exons = exons[bed_required_fields]
 
     # concat spliced transcripts and unspliced as spliceu
     spliceu = pr.concat([exons, unspliced])
@@ -1052,7 +1068,6 @@ def make_spliceu_txome(
     # g2g.csv
     t2g_3col[["Gene", "Gene"]].to_csv(out_g2g, sep="\t", header=False, index=False)
 
-    # print(spliceu.head())
     tid2strand = dict(zip(spliceu.Name, spliceu.Strand))
 
     # spliceu fasta
@@ -1090,7 +1105,7 @@ def make_spliceu_txome(
 
             # check return code
             if bt_r.returncode != 0:
-                logging.exception("Bedtools failed.")
+                logging.exception("Bedtools failed.", exc_info=True)
 
             # parse temp fasta file to concat exons of each transcript
             ei_parser = SeqIO.parse(temp_fa, "fasta")
@@ -1122,7 +1137,7 @@ def make_spliceu_txome(
             logging.warning(
                 f" Bedtools failed; Using biopython instead. The error message was: {err}"
             )
-            shutil.rmtree(temp_dir, ignore_errors=True)
+            # shutil.rmtree(temp_dir, ignore_errors=True)
 
     if no_bt:
         with open(out_fa, "w") as out_handle:
