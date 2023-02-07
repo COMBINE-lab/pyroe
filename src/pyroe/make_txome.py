@@ -446,7 +446,7 @@ def check_bedtools_version(bt_path):
         found_ver = parse_version(vstr)
         req_ver = parse_version("2.30.0")
         return found_ver >= req_ver
-    except subprocess.CalledProcessError as err:
+    except Exception as err:
         # in this case couldn't even run subprocess
         logging.warning(f" Cannot check bedtools version. The error message was: {err}")
         return False
@@ -608,7 +608,7 @@ def make_splici_txome(
     # load gtf
     try:
         gr = pr.read_gtf(gtf_path)
-    except ValueError as err:
+    except Exception as err:
         # in this case couldn't even read the GTF file
         logging.error(
             "".join(
@@ -774,13 +774,13 @@ def make_splici_txome(
                 if tid2strand[prev_rec.id] == "-":
                     prev_rec = prev_rec.reverse_complement(id=True, description=True)
                 SeqIO.write(prev_rec, out_handle, "fasta")
-            # shutil.rmtree(temp_dir, ignore_errors=True)
+            shutil.rmtree(temp_dir, ignore_errors=True)
         except Exception as err:
             no_bt = True
             logging.warning(
                 f" Bedtools failed; Using biopython instead. The error message was: \n{err}"
             )
-            # shutil.rmtree(temp_dir, ignore_errors=True)
+            shutil.rmtree(temp_dir, ignore_errors=True)
 
     if no_bt:
         with open(out_fa, "w") as out_handle:
@@ -1015,7 +1015,7 @@ def make_spliceu_txome(
             "".join(
                 [
                     " PyRanges failed to parse the input GTF file.",
-                    " Please check the PyRanges documentation for ",
+                    " Please check the PyRanges documentation for",
                     " the expected GTF format constraints at",
                     " https://pyranges.readthedocs.io/en/latest/autoapi/pyranges/readers/index.html?highlight=read_gtf#pyranges.readers.read_gtf .",
                     f" The error message was: {str(err)}",
@@ -1137,7 +1137,7 @@ def make_spliceu_txome(
             logging.warning(
                 f" Bedtools failed; Using biopython instead. The error message was: {err}"
             )
-            # shutil.rmtree(temp_dir, ignore_errors=True)
+            shutil.rmtree(temp_dir, ignore_errors=True)
 
     if no_bt:
         with open(out_fa, "w") as out_handle:
