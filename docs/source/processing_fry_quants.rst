@@ -12,7 +12,7 @@ Required Parameters
 ^^^^^^^^^^^^^^^^^^^
 
 frydir : ``str``
-    The path to a output directory returned by alevin-fry quant command. \\
+    The path to a output directory returned by alevin-fry quant command. \
     The directory containing the alevin-fry quantification (i.e. the the quant.json file & alevin subdirectory).
 
 
@@ -20,16 +20,16 @@ Optional Parameters
 ^^^^^^^^^^^^^^^^^^^
 
 output_format : ``str`` or ``dict``
-    A string represents one of the pre-defined output formats, which are "scRNA", "snRNA" and "velocity". \\
-    If a customized format of the returned `AnnData` is needed, one can pass a Dictionary.\\
+    A string represents one of the pre-defined output formats, which are "scRNA", "snRNA" and "velocity". \
+    If a customized format of the returned `AnnData` is needed, one can pass a Dictionary. \
     See Notes section for details.
 
 quiet : ``bool`` (default: ``True``)
-    True if function should be quiet.
+    True if function should be quiet.\
     False if messages (including error messages) should be printed out. 
     
 nonzero : ``bool`` (default: ``False``)
-    True if cells with non-zero expression value across all genes should be filtered in each layer.
+    True if cells with non-zero expression value across all genes should be filtered in each layer.\
     False if unexpressed genes should be kept.
 
 `load_fry` Notes
@@ -45,11 +45,11 @@ returned by alevin-fry.
 The following formats are defined:
 
 * "scRNA": \
-    This format is recommended for single cell RNA-sequencing experiments. 
+    This format is recommended for single cell RNA-sequencing experiments. \
     It returns a `X` field that contains the S+A count of each gene in each cell , and an extra `unspliced` field that contains the U count of each gene in each cell.
 
 * "snRNA", "U+S+A", "all": \
-    These formats are recommended for single nucleus RNA-sequencing experiments. Furthermore, these formats match the behaviors of Cell Ranger 7, which by default includes all intronic reads in the output gene count matrix for both single-cell and single-nucleus experiments.
+    These formats are recommended for single nucleus RNA-sequencing experiments. Furthermore, these formats match the behaviors of Cell Ranger 7, which by default includes all intronic reads in the output gene count matrix for both single-cell and single-nucleus experiments.\
     These formats return a `X` field that contains the U+S+A count of each gene in each cell without any extra layers.
 
 * "raw": \
