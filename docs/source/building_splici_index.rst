@@ -78,7 +78,8 @@ Recently, `He et al., 2023 <https://www.biorxiv.org/content/10.1101/2023.01.04.5
   pyroe make-spliced+unspliced extdata/small_example_genome.fa extdata/small_example.gtf spliceu_txome \
   --filename-prefix spliceu
 
-### Full usage
+Full usage
+^^^^^^^^^^
 
 .. code::
 
