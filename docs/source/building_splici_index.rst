@@ -1,8 +1,8 @@
 #################################################################################
-Preparing an expanded transcriptomic reference for quantification with alevin-fry
+Preparing an expanded transcriptome reference for quantification with alevin-fry
 #################################################################################
 
-The USA mode in alevin-fry requires an expanded index reference, in which sequences represent spliced and unspliced transcripts. Pyroe provides CLI programs and python functions to build the pre-defined expanded references, the spliced + intronic (*splici*) reference, which includes the spliced transcripts plus the (merged and collapsed) intronic sequences of each gene and the spliced + unspliced (*spliceu*) reference, which consists of the spliced transcripts plus the unspliced transcript (genes' entire genomic interval) of each gene. The ``make_splici_txome()`` and ``make_spliceu_txome()`` python functions are designed to make the *splici* and *spliceu* reference by taking a genome FASTA file and a gene annotation GTF file as the input.
+The USA mode in alevin-fry requires an expanded index reference, in which sequences represent spliced and unspliced transcripts. Pyroe provides CLI programs and python functions to build the pre-defined expanded references, the spliced + intronic (*splici*) reference, which includes the spliced transcripts plus the (merged and collapsed) intronic sequences of each gene and the spliced + unspliced (*spliceu*) reference, which consists of the spliced transcripts plus the unspliced transcript (genes' entire genomic interval) of each gene. The ``make_splici_txome()`` and ``make_spliceu_txome()`` python functions are designed to make the *splici* and *spliceu* reference by taking a genome FASTA file and a gene annotation GTF file as the input. Furthermore, the 
 
 Preparing a *spliced+intronic* transcriptome reference
 -------------------------------------------------------
@@ -11,7 +11,7 @@ The *splici* index reference of a given species consists of the transcriptome of
 
 To prepare a *splici* reference using pyroe, in addition to a genome FASTA file and a gene annotation GTF file, you also need to specify the read length argument ``read_length`` of the experiment you are working on. Besides, you can provide a flank trimming length ``flank_trim_length``. Then, a final flank length will be computed as the difference between the ``read_length`` and flank trimming length and will be attached to the ends of each intron to absorb the intron-exon junctional reads. Details about *splici* can be found in the supplementary section S2 of the `alevin-fry paper <https://www.nature.com/articles/s41592-022-01408-3>`_. 
 
-Following is an example of calling `pyroe` in the command line to make the *splici* index reference. The final flank length is calculated as the difference between the read length and the flank_trim_length, i.e., 5-2=3. This program allows you to add extra spliced and unspliced sequences to the *splici* index reference, which will be useful when some unannotated sequences, such as mitochondrial genes, are important for your experiment. **Note** : To make `pyroe` work more quickly, it is recommended to have the latest version of `bedtools <https://bedtools.readthedocs.io/en/latest/>`_ (`Aaron R. Quinlan and Ira M. Hall, 2010 <https://doi.org/10.1093/bioinformatics/btq033>`_) installed.
+Following is an example of calling ``pyroe`` in the command line to make the *splici* index reference. The final flank length is calculated as the difference between the read length and the flank_trim_length, i.e., 5-2=3. This program allows you to add extra spliced and unspliced sequences to the *splici* index reference, which will be useful when some unannotated sequences, such as mitochondrial genes, are important for your experiment. **Note** : To make `pyroe` work more quickly, it is recommended to have the latest version of `bedtools <https://bedtools.readthedocs.io/en/latest/>`_ (`Aaron R. Quinlan and Ira M. Hall, 2010 <https://doi.org/10.1093/bioinformatics/btq033>`_) installed.
 
 .. code:: bash
 
@@ -68,10 +68,57 @@ Full usage
     --write-clean-gtf     A flag indicates whether a clean gtf will be written
                           if encountered invalid records.
 
-Preparing a *spliced+unspliced* index reference
------------------------------------------------
+The ``pyroe make-spliced+intronic`` command line program calls the ``make_splici_txome()`` python function under the hood. One can also directly call this function from a python instance to build a *splici* index. Here we provide helping messages of the ``make_splici_txome()`` python function. 
 
-Recently, `He et al., 2023 <https://www.biorxiv.org/content/10.1101/2023.01.04.522742>`_ introduced the spliced + unspliced (*spliceu*) index in alevin-fry. This requires the spliced + unspliced transcriptome, where the unspliced transcripts of each gene represent the entire genomic interval of that gene. Details about the *spliceu* can be found in `the preprint <https://www.biorxiv.org/content/10.1101/2023.01.04.522742>`_. To make the spliceu reference using pyroe, one can call the ``make_spliceu_txome()`` python function or ``pyroe make-spliced+unspliced`` or its alias ``pyroe make-spliceu`` from the command line. The following example shows the shell command of building a spliceu reference from a given reference set in the directory ``spliceu_txome``.
+.. code::
+
+  Construct the splici (spliced + introns) transcriptome for alevin-fry.
+
+  Required Parameters
+  genome_path : str
+      The path to a genome fasta file.
+
+  gtf_path : str
+      The path to a gtf file.
+
+  read_length : int
+      The read length of the single-cell experiment being processed.
+
+  output_dir : str
+      The output directory, where the splici reference files will be written.
+
+  Optional Parameters
+  flank_trim_length : int (default: 5)
+      The flank trimming length. The final flank length is obtained by subtracting the flank_trim_length from the read_length.
+
+  filename_prefix : str (default: splici)
+      The file name prefix of the generated output files. The derived flank length will be automatically appended to the provided prefix.
+
+  extra_spliced : str
+      A path to a fasta file. The records in this fasta file will be regarded as spliced transcripts.
+
+  extra_unspliced : str
+      The path to a fasta file. The records in this fasta file will be regarded as introns.
+
+  dedup_seqs : bool (default: False)
+      If True, the repeated sequences in the splici reference will be deduplicated.
+
+  no_bt : bool (default: False)
+      If true, biopython, instead of bedtools, will be used for generating splici reference files.
+
+  bt_path : str
+      The path to bedtools v2.30.0 or greater if it is not in the environment PATH.
+
+  no_flanking_merge : bool (default: False)
+      If true, overlapping introns caused by the added flanking length will not be merged.
+
+  Returns
+  Nothing will be returned. The splici reference files will be written to disk.
+
+Preparing a *spliced+unspliced* transcriptome reference
+-------------------------------------------------------
+
+Recently, `He et al., 2023 <https://www.biorxiv.org/content/10.1101/2023.01.04.522742>`_ introduced the spliced + unspliced (*spliceu*) index in alevin-fry. This requires the spliced + unspliced transcriptome reference, where the unspliced transcripts of each gene represent the entire genomic interval of that gene. Details about the *spliceu* can be found in `the preprint <https://www.biorxiv.org/content/10.1101/2023.01.04.522742>`_. To make the spliceu reference using pyroe, one can call the ``make_spliceu_txome()`` python function or ``pyroe make-spliced+unspliced`` or its alias ``pyroe make-spliceu`` from the command line. The following example shows the shell command of building a spliceu reference from a given reference set in the directory ``spliceu_txome``.
 
 .. code:: bash
 
@@ -105,6 +152,51 @@ Full usage
     --no-bt               A flag indicates whether bedtools will be used for generating Spliceu reference
                           files.
     --dedup-seqs          A flag indicates whether identical sequences will be deduplicated.
+
+The ``pyroe make-spliced+unspliced`` command line program calls the ``make_spliceu_txome()`` python function under the hood. One can also directly call this function from a python instance to build a *spliceu* index. Here we provide helping messages of the ``make_spliceu_txome()`` python function. 
+
+.. code::
+
+  Construct the spliceu (spliced + unspliced) transcriptome for alevin-fry.
+
+  Required Parameters
+  genome_path : str
+      The path to a genome fasta file.
+
+  gtf_path : str
+      The path to a gtf file.
+
+  output_dir : str
+      The output directory, where the spliceu reference files will be written.
+
+  Optional Parameters
+  filename_prefix : str (default: spliceu)
+      The file name prefix of the generated output files. The derived flank length will be automatically appended to the provided prefix.
+
+  extra_spliced : str
+      A path to a fasta file. The records in this fasta file will be regarded as spliced transcripts.
+
+  extra_unspliced : str
+      The path to a fasta file. The records in this fasta file will be regarded as introns.
+
+  dedup_seqs : bool (default: False)
+      If True, the repeated sequences in the spliceu reference will be deduplicated.
+
+  no_bt : bool (default: False)
+      If true, biopython, instead of bedtools, will be used for generating spliceu reference files.
+
+  bt_path : str
+      The path to bedtools v2.30.0 or greater if it is not in the environment PATH.
+
+  Returns
+  Nothing will be returned. The spliceu reference files will be written to disk.
+
+  Notes
+  The input GTF file will be processed before extracting unspliced sequences. If pyroe finds invalid records, a clean_gtf.gtf file will be generated in the specified output directory. **Note** : The features extracted in the spliced + unspliced transcriptome will not necessarily be those present in the clean_gtf.gtf file — as this command will prefer the input in the user-provided file wherever possible. More specifically:
+  If the required metadata fields contain missing values, pyroe will impute them if possible, or return an error if not.
+  **Pyroe will always extract unspliced sequences according to the boundaries defined in the transcript/gene feature records unless there is no transcript/gene feature record in the GTF file.** In this case, pyroe imputes all transcripts/genes boundaries as the bounds of the corresponding exons to extract unspliced sequences.
+  If the transcript/gene feature records do not match their exon feature records, pyroe will still use transcript/gene feature records, but correct those transcript/gene feature records in the celan_grf.gtf according to exon feature records.
+  If using bedtools, a temp.bed and a temp.fa will be created and then deleted. These two files encode the introns of each gene and the exons of each transcript of each gene.
 
 
 
