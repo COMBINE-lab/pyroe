@@ -32,7 +32,7 @@ The `pyroe make-spliced+intronic` program writes three files to your specified o
 Full usage
 ^^^^^^^^^^
 
-.. code:: bash 
+.. code::
 
   usage: pyroe make-spliced+intronic [-h] [--filename-prefix FILENAME_PREFIX]
                                     [--flank-trim-length FLANK_TRIM_LENGTH]
