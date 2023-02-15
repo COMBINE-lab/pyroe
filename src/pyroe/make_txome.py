@@ -1,4 +1,5 @@
 import os
+import warnings
 import subprocess
 import shutil
 import pyranges as pr
@@ -633,8 +634,10 @@ def make_splici_txome(
     # get introns
     # the introns() function uses inplace=True argument from pandas,
     # which will trigger an FutureWarning.
-    # warnings.simplefilter(action="ignore", category=FutureWarning)
+    warnings.simplefilter(action="ignore", category=FutureWarning)
     introns = gr.features.introns(by="transcript")
+    warnings.simplefilter(action="default", category=FutureWarning)
+
     introns.Name = introns.gene_id
 
     if no_flanking_merge:
