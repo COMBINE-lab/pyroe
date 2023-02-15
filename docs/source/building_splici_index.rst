@@ -15,8 +15,12 @@ Following is an example of calling ``pyroe`` in the command line to make the *sp
 
 .. code:: bash
 
-  pyroe make-spliced+intronic extdata/small_example_genome.fa extdata/small_example.gtf 5 splici_txome \
-  --flank-trim-length 2 --filename-prefix splici --dedup-seqs
+  pyroe make-spliced+intronic \
+  extdata/small_example_genome.fa \
+  extdata/small_example.gtf 5 splici_txome \
+  --flank-trim-length 2 \
+  --filename-prefix splici \
+  --dedup-seqs
 
 
 The `pyroe make-spliced+intronic` program writes three files to your specified output directory `splici_txome`. They are 
@@ -28,7 +32,7 @@ The `pyroe make-spliced+intronic` program writes three files to your specified o
 Full usage
 ^^^^^^^^^^
 
-.. code:: bash 
+.. code::
 
   usage: pyroe make-spliced+intronic [-h] [--filename-prefix FILENAME_PREFIX]
                                     [--flank-trim-length FLANK_TRIM_LENGTH]
@@ -122,7 +126,10 @@ Recently, `He et al., 2023 <https://www.biorxiv.org/content/10.1101/2023.01.04.5
 
 .. code:: bash
 
-  pyroe make-spliced+unspliced extdata/small_example_genome.fa extdata/small_example.gtf spliceu_txome \
+  pyroe make-spliced+unspliced \
+  extdata/small_example_genome.fa \
+  extdata/small_example.gtf \
+  spliceu_txome \
   --filename-prefix spliceu
 
 Full usage
