@@ -7,20 +7,11 @@ The ``pyroe`` package can be accessed from its `github repository <https://githu
 
   pip install pyroe
 
-
-To make use of the ``load_fry`` function (which, itself, installs `scanpy <https://scanpy.readthedocs.io/en/stable/>`_):
-
-.. code:: bash
-
-  pip install pyroe
-
-
 Alternatively, ``pyroe`` can be installed via ``bioconda``, which will automatically install the variant of the package including ``load_fry``, and will
-also install ``bedtools`` to enable faster construction of the *splici* reference.  This installation can be performed with the command:
+also install ``bedtools`` to enable faster construction of the expanded references.  This installation can be performed with the following shell command:
 
 .. code:: bash
 
-  conda install pyroe
+  conda install pyroe -c bioconda
 
 
-with the appropriate bioconda channel in the conda channel list.
