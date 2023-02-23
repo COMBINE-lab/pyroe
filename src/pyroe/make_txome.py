@@ -255,7 +255,7 @@ def check_gr(gr, output_dir):
         gr = gr.insert(gene_df)
 
         # Then, records all exon records and gene records
-        clean_gr = pr.concat(clean_gr, gr[gr.Feature == "exon"])
+        clean_gr = pr.concat([clean_gr, gr[gr.Feature == "exon"]])
 
     # check if the transcripts and genes are well defined
     # first, we get the transcript annotation from exons and from the transcript feature records
@@ -680,7 +680,7 @@ def make_splici_txome(
             "".join(
                 [
                     " Failed to refine intron bounds using genome bounds.",
-                    " Please check if the input genome FASTA file and GTF file match each other.",
+                    " Please check if the input genome FASTA file and GTF file match each other, especially the chromosome names.",
                     f" The error message was: {str(err)}",
                 ]
             ),
