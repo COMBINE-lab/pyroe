@@ -22,20 +22,21 @@ if __name__ == "__main__":
     parser.add_argument(
         "-v", "--version", action="version", version=f"pyroe {__version__}"
     )
-    
+
     subparsers = parser.add_subparsers(
         title="subcommands",
         dest="command",
         description="valid subcommands",
         help="additional help",
     )
-    
+
     # make-splici
     parser_makeSplici = subparsers.add_parser(
-        "make-spliced+intronic", 
+        "make-spliced+intronic",
         help="Make spliced + intronic reference",
-        aliases=['make-splici']
+        aliases=["make-splici"],
     )
+    parser_makeSplici.set_defaults(command="make-spliced+intronic")
     parser_makeSplici.add_argument(
         "genome_path",
         metavar="genome-path",
@@ -105,8 +106,9 @@ if __name__ == "__main__":
     parser_makeSpliceu = subparsers.add_parser(
         "make-spliced+unspliced",
         help="Make spliced + unspliced reference",
-        aliases=['make-spliceu']
+        aliases=["make-spliceu"],
     )
+    parser_makeSpliceu.set_defaults(command="make-spliced+unspliced")
     parser_makeSpliceu.add_argument(
         "genome_path",
         metavar="genome-path",
@@ -174,6 +176,7 @@ if __name__ == "__main__":
         epilog=epilog,
         formatter_class=RawTextHelpFormatter,
     )
+    parser_fetchQuant.set_defaults(command="fetch-quant")
     parser_fetchQuant.add_argument(
         "dataset_ids",
         metavar="dataset-ids",
@@ -206,6 +209,7 @@ if __name__ == "__main__":
     parser_id_to_name = subparsers.add_parser(
         "id-to-name", help="Generate a gene id to gene name mapping file from a GTF."
     )
+    parser_id_to_name.set_defaults(command="id-to-name")
     parser_id_to_name.add_argument("gtf_file", help="The GTF input file.")
     parser_id_to_name.add_argument(
         "output", help="The path to where the output tsv file will be written."
@@ -220,6 +224,7 @@ if __name__ == "__main__":
     parser_convert = subparsers.add_parser(
         "convert", help="Convert alevin-fry quantification result to another format."
     )
+    parser_convert.set_defaults(command="convert")
     parser_convert.add_argument(
         "quant_dir",
         metavar="quant_dir",
@@ -250,7 +255,7 @@ if __name__ == "__main__":
 
     # Execute the parse_args() method
     args = parser.parse_args()
-    if args.command == "make-splici":
+    if args.command == "make-spliced+intronic":
         make_splici_txome(
             genome_path=args.genome_path,
             gtf_path=args.gtf_path,
@@ -265,7 +270,7 @@ if __name__ == "__main__":
             bt_path=args.bt_path,
             no_flanking_merge=args.no_flanking_merge,
         )
-    elif args.command == "make-spliceu":
+    elif args.command == "make-spliced+unspliced":
         make_spliceu_txome(
             genome_path=args.genome_path,
             gtf_path=args.gtf_path,
