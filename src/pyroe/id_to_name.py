@@ -19,7 +19,7 @@ def id_to_name(params):
         if len(suffs) >= 1:
             # look at the final suffix
             z = suffs[-1]
-            # if the final suffix is gz and there are 
+            # if the final suffix is gz and there are
             # suffixes preceding it, check the penultimate
             # one and use that
             if z == "gz" and len(suffs) > 1:
