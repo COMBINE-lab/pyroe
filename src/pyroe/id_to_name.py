@@ -6,31 +6,35 @@ import sys
 
 def id_to_name(params):
     format_map = {
-        ".gtf": pyranges.read_gtf,
-        ".gff": pyranges.read_gff3,
-        ".gff3": pyranges.read_gff3,
+        "gtf": pyranges.read_gtf,
+        "gff": pyranges.read_gff3,
+        "gff3": pyranges.read_gff3,
     }
     annot_reader = None
     if params.format is None:
         p = pathlib.Path(params.gtf_file)
-        suffs = [z.lower() for z in p.suffixes]
+        suffs = [z.lower().strip('.') for z in p.suffixes]
 
         z = None
-        if len(suffs) == 1:
-            z = suffs[0]
-        elif len(suffs) == 2 and suffs[-1] == ".gz":
-            z = suffs[-2]
+        if len(suffs) >= 1:
+            # look at the final suffix
+            z = suffs[-1]
+            # if the final suffix is gz and there are
+            # suffixes preceding it, check the penultimate
+            # one and use that
+            if z == "gz" and len(suffs) > 1:
+                z = suffs[-2]
 
-        if z in format_map.keys():
-            annot_reader = format_map[z]
-        else:
+        if z is None or z not in format_map.keys():
             logging.error(
                 "Could not determine format of annotation file. Please provide it explicitly."
             )
             sys.exit(1)
+        else:
+            annot_reader = format_map[z]
     else:
         fmt = params.format.lower()
-        if fmt not in ["gtf", "gff3"]:
+        if fmt not in format_map.keys():
             logging.error(
                 f'Format must be either "gtf" or "gff3", but {fmt} was provided.'
             )
