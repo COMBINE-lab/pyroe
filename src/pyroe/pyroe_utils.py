@@ -11,7 +11,7 @@ def check_dataset_ids(n_ds, dataset_ids):
     # check the validity of dataset_ids
     invalid_ids = []
     for idx, dataset_id in enumerate(dataset_ids):
-        if type(dataset_id) == int:
+        if type(dataset_id) is int:
             if dataset_id > n_ds or dataset_id < 1:
                 print(f"Found invalid dataset id '{dataset_id}', ignored.")
                 invalid_ids.append(idx)

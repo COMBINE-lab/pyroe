@@ -235,7 +235,7 @@ def process_output_format(output_format, quiet):
                 print(
                     f"Will populate output field X with sum of counts frorm {predefined_format[output_format]['X']}."
                 )
-                for (k, v) in predefined_format[output_format].items():
+                for k, v in predefined_format[output_format].items():
                     if k != "X":
                         print(f"Will combine {v} into output layer {k}.")
 
@@ -253,7 +253,7 @@ def process_output_format(output_format, quiet):
                     f"Will populate output field X with sum of counts frorm {output_format['X']}."
                 )
 
-            for (k, v) in output_format.items():
+            for k, v in output_format.items():
                 if not v:
                     # empty list
                     raise ValueError(

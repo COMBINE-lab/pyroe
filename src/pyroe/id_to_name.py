@@ -13,7 +13,7 @@ def id_to_name(params):
     annot_reader = None
     if params.format is None:
         p = pathlib.Path(params.gtf_file)
-        suffs = [z.lower().strip('.') for z in p.suffixes]
+        suffs = [z.lower().strip(".") for z in p.suffixes]
 
         z = None
         if len(suffs) >= 1:

@@ -577,7 +577,7 @@ def make_splici_txome(
                     # init seq list
                     intron_seqs = []
                     # for each intron record
-                    for (idx, intron_record) in chr_records.iterrows():
+                    for idx, intron_record in chr_records.iterrows():
                         # create Seqeture object for extracting sequence from chromosome
                         intron_feature = SeqFeature(
                             FeatureLocation(intron_record.Start, intron_record.End),
@@ -601,12 +601,12 @@ def make_splici_txome(
                 if not chr_records.empty:
                     txp_seqs = []
                     # as spliced txps are the concat of all exon sequences, fist get the sequence of each exon separately,then sum them up.
-                    for (tid, exon_records) in chr_records.groupby("Name"):
+                    for tid, exon_records in chr_records.groupby("Name"):
 
                         # init exon seq list
                         exon_seqs = []
                         # get the sequence of each exon
-                        for (idx, exon_record) in exon_records.iterrows():
+                        for idx, exon_record in exon_records.iterrows():
                             # create SeqFeature object for the exon record
                             # ignore strand for now, get reverse complement later if needed
                             exon_feature = SeqFeature(
