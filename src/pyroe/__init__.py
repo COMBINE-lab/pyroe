@@ -8,12 +8,12 @@ from pyroe.convert import convert
 from pyroe.pyroe_utils import output_formats
 
 
-try:
-    from pyroe.make_txome import make_splici_txome, make_spliceu_txome
-    from pyroe.id_to_name import id_to_name
-except ImportError:
-    make_splici_txome = None 
-    make_spliceu_txome = None 
-    id_to_name = None 
+# try:
+#     from pyroe.make_txome import make_splici_txome, make_spliceu_txome
+#     from pyroe.id_to_name import id_to_name
+# except ImportError:
+#     make_splici_txome = None 
+#     make_spliceu_txome = None 
+#     id_to_name = None 
 
 # flake8: noqa
