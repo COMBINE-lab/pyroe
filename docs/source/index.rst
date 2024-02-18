@@ -11,7 +11,6 @@ In previous versions (before v 0.10.0), pyroe also provided the functions to con
  
 **To note that** although pyroe is available on bioconda and can be easily installed, if you encounter any problem during installation, you can define the `load_fry` function locally in your python script by copying the function definition defined `here <https://github.com/COMBINE-lab/pyroe/blob/main/src/pyroe/load_fry.py>`_. The only dependency of `load_fry` is `scanpy <https://scanpy.readthedocs.io/en/stable/installation.html>`_. 
 
-Additionally, 
 
 .. toctree::
    :maxdepth: 2
