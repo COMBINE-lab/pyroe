@@ -1,5 +1,5 @@
 #################################################################################
-(Deprecated since v0.10.0)Preparing an expanded transcriptome reference for quantification with alevin-fry
+(Deprecated since v0.10.0) Preparing an expanded transcriptome reference for quantification with alevin-fry
 #################################################################################
 
 The USA mode in alevin-fry requires an expanded index reference, in which sequences represent spliced and unspliced transcripts. Pyroe provides CLI programs and python functions to build the pre-defined expanded references, the spliced + intronic (*splici*) reference, which includes the spliced transcripts plus the (merged and collapsed) intronic sequences of each gene and the spliced + unspliced (*spliceu*) reference, which consists of the spliced transcripts plus the unspliced transcript (genes' entire genomic interval) of each gene. The ``make_splici_txome()`` and ``make_spliceu_txome()`` python functions are designed to make the *splici* and *spliceu* reference by taking a genome FASTA file and a gene annotation GTF file as the input. Furthermore, the 
