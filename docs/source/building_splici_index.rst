@@ -1,11 +1,11 @@
 #################################################################################
-Preparing an expanded transcriptome reference for quantification with alevin-fry
+(Deprecated since v0.10.0) Preparing an expanded transcriptome reference for quantification with alevin-fry
 #################################################################################
 
 The USA mode in alevin-fry requires an expanded index reference, in which sequences represent spliced and unspliced transcripts. Pyroe provides CLI programs and python functions to build the pre-defined expanded references, the spliced + intronic (*splici*) reference, which includes the spliced transcripts plus the (merged and collapsed) intronic sequences of each gene and the spliced + unspliced (*spliceu*) reference, which consists of the spliced transcripts plus the unspliced transcript (genes' entire genomic interval) of each gene. The ``make_splici_txome()`` and ``make_spliceu_txome()`` python functions are designed to make the *splici* and *spliceu* reference by taking a genome FASTA file and a gene annotation GTF file as the input. Furthermore, the 
 
 Preparing a *spliced+intronic* transcriptome reference
--------------------------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The *splici* index reference of a given species consists of the transcriptome of the species, i.e., the spliced transcripts and the intronic sequences of the species. Within a gene, if the flanked intronic sequences overlap with each other, the overlapped intronic sequences will be collapsed as a single intronic sequence to make sure each base will appear only once in the intronic sequences of each gene.
 
@@ -29,8 +29,8 @@ The `pyroe make-spliced+intronic` program writes three files to your specified o
 * A three-column transcript-name-to-gene-name file that stores the name of each reference sequence in the splici index reference, their corresponding gene name, and the splicing status (`S` for spliced and `U` for unspliced) of those transcripts.
 * A two-column TSV file that maps gene ids (used as the keys in eventual alevin-fry output) to gene names. This can later be used with the ``pyroe convert`` command line program to convert gene ids to gene names in the count matrix.
 
-Full usage
-^^^^^^^^^^
+**Full usage**
+
 
 .. code::
 
@@ -120,7 +120,7 @@ The ``pyroe make-spliced+intronic`` command line program calls the ``make_splici
   Nothing will be returned. The splici reference files will be written to disk.
 
 Preparing a *spliced+unspliced* transcriptome reference
--------------------------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Recently, `He et al., 2023 <https://www.biorxiv.org/content/10.1101/2023.01.04.522742>`_ introduced the spliced + unspliced (*spliceu*) index in alevin-fry. This requires the spliced + unspliced transcriptome reference, where the unspliced transcripts of each gene represent the entire genomic interval of that gene. Details about the *spliceu* can be found in `the preprint <https://www.biorxiv.org/content/10.1101/2023.01.04.522742>`_. To make the spliceu reference using pyroe, one can call the ``make_spliceu_txome()`` python function or ``pyroe make-spliced+unspliced`` or its alias ``pyroe make-spliceu`` from the command line. The following example shows the shell command of building a spliceu reference from a given reference set in the directory ``spliceu_txome``.
 
@@ -132,8 +132,8 @@ Recently, `He et al., 2023 <https://www.biorxiv.org/content/10.1101/2023.01.04.5
   spliceu_txome \
   --filename-prefix spliceu
 
-Full usage
-^^^^^^^^^^
+**Full usage**
+
 
 .. code::
 
@@ -208,7 +208,8 @@ The ``pyroe make-spliced+unspliced`` command line program calls the ``make_splic
 
 
 Notes on the input gene annotation GTF files for building an expanded reference
-----------------------------------------------------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 Pyroe builds expanded transcriptome references, the spliced + intronic (*splici*) and the spliced + unspliced (*spliceu*) transcriptome reference, based on a genome build FASTA file and a gene annotation GTF file.
 
 The input GTF file will be processed before extracting unspliced sequences. If pyroe finds invalid records, a ``clean_gtf.gtf`` file will be generated in the specified output directory.  **Note** : The features extracted in the spliced + unspliced transcriptome will not necessarily be those present in the ``clean_gtf.gtf`` file — as this command will prefer the input in the user-provided file wherever possible. One can rerun pyroe using the ``clean_gtf.gtf`` file if needed. More specifically:

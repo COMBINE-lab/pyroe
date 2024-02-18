@@ -1,4 +1,4 @@
-Generating a gene id to gene name mapping
+(Deprecated since v0.10.0) Generating a gene id to gene name mapping
 =========================================
 
 It is often useful to perform analyses with gene *names* rather than gene *identifiers*. The `convert <https://pyroe.readthedocs.io/en/latest/converting_quants.html>`_ command of ``pyroe`` allows you to specify an id to name mapping so that the converted output matrix will be labeled with gene names rather than identifiers.  However, you must provide it with a 2-column tab-separated file mapping IDs to names.  This command can help you with that task.
