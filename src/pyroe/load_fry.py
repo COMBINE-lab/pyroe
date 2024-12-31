@@ -1,15 +1,6 @@
-try:
-    import scanpy
-except ModuleNotFoundError:
-    print(
-        "scanpy must be installed to enable the load_fry() function. Use `conda install -c scanpy ` or `pip install scanpy` to install it."
-    )
-    import sys
+from .pyroe_utils import say
 
-    sys.exit(1)
-
-
-def load_fry(frydir, output_format="scRNA", nonzero=False, quiet=False):
+def load_fry(frydir, output_format="scRNA", aux_columns = ["X", "Y"],gene_id_to_name=None,  nonzero=False, quiet=False):
     """
     load alevin-fry quantification result into an AnnData object
 
@@ -25,6 +16,19 @@ def load_fry(frydir, output_format="scRNA", nonzero=False, quiet=False):
         A string represents one of the pre-defined output formats, which are "scRNA", "S+A", "snRNA", "all", "U+S+A" and "velocity". \\
         If a customized format of the returned `AnnData` is needed, one can pass a Dictionary.\\
         See Notes section for details.
+
+    aux_columns : `list[str]` (default: `["X", "Y"]`)
+        A list of strings contains the column names of the auxiliary information in the barcodes file starting from the second column. \\
+        The first column is assumed to be the barcodes and is named as "barcodes". \\
+        Extra auxiliary columns in the barcodes file without a specified name will be ignored.
+
+    gene_id_to_name : `str` or `None` (default: `None`)
+        The path to a file that contains the mapping from gene names to gene ids. \\
+        It is only needed if \\
+            1. you are not using the simpleaf pipeline (`simpleaf index` + `simpleaf quant`), \\ 
+            2. you have such a file, and,
+            3. you want to add this information to the coldata of your anndata.
+        If you do, please ensure it is a tab-separated, two-column file without a header, and the first column is the gene ids and the second column is the gene names. 
 
     nonzero : `bool` (default: `False`)
         True if cells with non-zero expression value across all genes should be filtered in each layer.
@@ -45,7 +49,7 @@ def load_fry(frydir, output_format="scRNA", nonzero=False, quiet=False):
 
     The following formats are defined:
 
-    * "scRNA": \\
+    * "scRNA" and "S+A": \\
         This format is recommended for single cell RNA-sequencing experiments.
         It returns a `X` field that contains the S+A count of each gene in each cell,
         and a `unspliced` field that contains the U count of each gene.
@@ -89,6 +93,7 @@ def load_fry(frydir, output_format="scRNA", nonzero=False, quiet=False):
     import json
     import os
     import pandas as pd
+    import scanpy
 
     # since alevin-fry 0.4.1 the generic "meta_info.json"
     # has been replaced by a more informative name for each
@@ -100,14 +105,12 @@ def load_fry(frydir, output_format="scRNA", nonzero=False, quiet=False):
     # first, check for the new file, if we don't find it, check
     # for the old one.
     if not os.path.exists(fpath):
-        if not quiet:
-            print(
-                f"Did not find a {meta_info_files[0]} file, checking for older {meta_info_files[1]}."
-            )
+        say(quiet, f"Did not find a {meta_info_files[0]} file, checking for older {meta_info_files[1]}.")
+
         fpath = os.path.sep.join([frydir, meta_info_files[1]])
         # if we don't find the old one either, then return None
         if not os.path.exists(fpath):
-            raise IOError(f"Found no {meta_info_files[1]} file either; cannot proceed.")
+            raise IOError("The profvided `frydir` doesn't contain required meta info file; cannot proceed.")
 
     # if we got here then we had a valid json file, so
     # use it to get the number of genes, and if we are
@@ -115,8 +118,8 @@ def load_fry(frydir, output_format="scRNA", nonzero=False, quiet=False):
     meta_info = json.load(open(fpath))
     ng = meta_info["num_genes"]
     usa_mode = meta_info["usa_mode"]
-    if not quiet:
-        print(f"USA mode: {usa_mode}")
+
+    say(quiet, f"USA mode: {usa_mode}")
 
     # if we are in USA mode
     if usa_mode:
@@ -125,42 +128,69 @@ def load_fry(frydir, output_format="scRNA", nonzero=False, quiet=False):
         # genes is ng/3.
         ng = int(ng / 3)
         output_assays = process_output_format(output_format, quiet)
-    elif not quiet:
-        print(
+    else:
+        say(quiet,
             "Processing input in standard mode, the count matrix will be stored in field 'X'."
         )
         if output_format != "scRNA":
-            print("Output_format will be ignored.")
+            say(quiet, "Output_format will be ignored.")
 
-    # read the actual input matrix
-    af_raw = scanpy.read_mtx(os.path.sep.join([frydir, "alevin", "quants_mat.mtx"]))
-    afg = [
-        line.rstrip()
-        for line in open(
-            os.path.sep.join([frydir, "alevin", "quants_mat_cols.txt"])
-        ).readlines()
-    ][:ng]
     # read the gene ids
-    afg_df = pd.DataFrame(afg, columns=["gene_ids"])
-    afg_df = afg_df.set_index("gene_ids")
-    # and the barcodes
-    abc = [
-        line.rstrip()
-        for line in open(
-            os.path.sep.join([frydir, "alevin", "quants_mat_rows.txt"])
-        ).readlines()
-    ]
-    abc_df = pd.DataFrame(abc, columns=["barcodes"])
-    abc_df.index = abc_df["barcodes"]
+    afg_df = pd.read_table(os.path.sep.join([frydir, "alevin", "quants_mat_cols.txt"]), names=["gene_ids"])
 
+    # if we have a gene name to id mapping, use it
+    # Otherwise, we see if there is a default mapping file
+    # We first hope the user gives one
+    gene_id_to_name_path = gene_id_to_name
+
+    # we then check if we can find a default mapping file
+    if gene_id_to_name_path is None:
+        default_gene_id_to_name_path = os.path.sep.join([frydir, "gene_id_to_name.tsv"])
+        if os.path.exists(default_gene_id_to_name_path):
+            gene_id_to_name_path = default_gene_id_to_name_path
+            say(quiet, f"Using simpleaf gene name to id mapping file: {gene_id_to_name_path}")
+
+    # read the file if we find it
+    if gene_id_to_name_path is not None:
+        gene_id_to_name_df = pd.read_table(gene_id_to_name_path, names=["gene_ids", "gene_names"])
+        afg_df = pd.merge(afg_df, gene_id_to_name_df, on="gene_ids", how="left")
+    
+    afg_df = afg_df.set_index("gene_ids", drop=False)
+
+    # read the barcodes file
+    abc_df = pd.read_table(os.path.sep.join([frydir, "alevin", "quants_mat_rows.txt"]), header=None)
+
+    # if column names and num columns don't match, match them
+    # we have only barcode
+    if abc_df.shape[1] == 1:
+        columns = ["barcodes"]
+    else:
+        say(quiet, f"Found {abc_df.shape[1] - 1} auxiliary columns in barcodes file.")
+        columns = ["barcodes"] + aux_columns
+
+    if abc_df.shape[1] != len(columns):
+        ncol = min(abc_df.shape[1], len(columns))
+
+        say(quiet, f"Number of auxiliary columns in barcodes file does not match the provided column names. Using the first {ncol} columns in the barcode file with names: {columns[:ncol]}.")
+
+        abc_df.columns = columns[:ncol]
+        columns = columns[:ncol]
+    
+    abc_df = abc_df.set_axis(columns, axis=1)
+    abc_df = abc_df.set_index(columns[0], drop=False)
+
+    say(quiet, "Reading the quantification matrix.")
+    af_raw = scanpy.read_mtx(os.path.sep.join([frydir, "alevin", "quants_mat.mtx"]))
     x = af_raw.X
     # if we're not in USA mode, just combine this info into
     # an AnnData object
     if not usa_mode:
+        say(quiet, "Constructing the AnnData object.")
         af = scanpy.AnnData(x.T, var=abc_df, obs=afg_df)
         af = af.T
 
     else:  # USA mode
+        say(quiet, "Converting USA mode quantification into specified layers.")
         # otherwise, combine the sub-matrices into the output object as
         # specified by `output_assays`
         rd = {"S": range(0, ng), "U": range(ng, 2 * ng), "A": range(2 * ng, 3 * ng)}
@@ -191,9 +221,9 @@ def load_fry(frydir, output_format="scRNA", nonzero=False, quiet=False):
 
         af = af[:, not_zero_genes]
 
-        if not quiet:
-            print(f"Filtered {np.sum(~not_zero_genes)} non-expressed genes.")
+        say(quiet, f"Filtered {np.sum(~not_zero_genes)} non-expressed genes.")
 
+    say(quiet, "Done.")
     return af
 
 
@@ -226,32 +256,28 @@ def process_output_format(output_format, quiet):
             output_format = output_format.lower()
             if output_format not in predefined_format.keys():
                 # invalid output_format string
-                if not quiet:
-                    print("A undefined Provided output_format string provided.")
-                    print("See function help message for details.")
+                say(quiet, "A undefined Provided output_format string provided.")
+                say(quiet, "See function help message for details.")
                 raise ValueError("Invalid output_format.")
-            if not quiet:
-                print("Using pre-defined output format:", output_format)
-                print(
-                    f"Will populate output field X with sum of counts frorm {predefined_format[output_format]['X']}."
-                )
-                for k, v in predefined_format[output_format].items():
-                    if k != "X":
-                        print(f"Will combine {v} into output layer {k}.")
+            say(quiet, "Using pre-defined output format:", output_format)
+            say(quiet, 
+                f"Will populate output field X with sum of counts frorm {predefined_format[output_format]['X']}."
+            )
+            for k, v in predefined_format[output_format].items():
+                if k != "X":
+                    say(quiet, f"Will combine {v} into output layer {k}.")
 
             return predefined_format[output_format]
         else:
-            if not quiet:
-                print("Processing user-defined output format.")
+            say(quiet, "Processing user-defined output format.")
             # make sure the X is there
             if "X" not in output_format.keys():
                 raise ValueError(
                     'In USA mode some sub-matrices must be assigned to the "X" (default) output.'
                 )
-            if not quiet:
-                print(
-                    f"Will populate output field X with sum of counts frorm {output_format['X']}."
-                )
+            say(quiet,
+                f"Will populate output field X with sum of counts frorm {output_format['X']}."
+            )
 
             for k, v in output_format.items():
                 if not v:
@@ -266,8 +292,8 @@ def process_output_format(output_format, quiet):
                     raise ValueError(
                         f"Found non-USA element in output_format element list '{v}' for key '{k}'; cannot proceed."
                     )
-                if not quiet and (k != "X"):
-                    print(f"Will combine {v} into output layer {k}.")
+                if k != "X":
+                    say(quiet, f"Will combine {v} into output layer {k}.")
 
             return output_format
     else:
