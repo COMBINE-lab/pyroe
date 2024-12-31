@@ -160,6 +160,14 @@ def load_fry(
     # Otherwise, we see if there is a default mapping file
     # We first hope the user gives one
     gene_id_to_name_path = gene_id_to_name
+    # make sure the file exists
+    if gene_id_to_name_path is not None:
+        if not os.path.exists(gene_id_to_name_path):
+            say(
+                quiet,
+                f"The provided gene id to name mapping file {gene_id_to_name_path} does not exist; ignored.",
+            )
+            gene_id_to_name_path = None
 
     # we then check if we can find a default mapping file
     if gene_id_to_name_path is None:
