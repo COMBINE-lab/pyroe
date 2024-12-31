@@ -1,6 +1,14 @@
 from .pyroe_utils import say
 
-def load_fry(frydir, output_format="scRNA", aux_columns = ["X", "Y"],gene_id_to_name=None,  nonzero=False, quiet=False):
+
+def load_fry(
+    frydir,
+    output_format="scRNA",
+    aux_columns=["X", "Y"],
+    gene_id_to_name=None,
+    nonzero=False,
+    quiet=False,
+):
     """
     load alevin-fry quantification result into an AnnData object
 
@@ -25,10 +33,10 @@ def load_fry(frydir, output_format="scRNA", aux_columns = ["X", "Y"],gene_id_to_
     gene_id_to_name : `str` or `None` (default: `None`)
         The path to a file that contains the mapping from gene names to gene ids. \\
         It is only needed if \\
-            1. you are not using the simpleaf pipeline (`simpleaf index` + `simpleaf quant`), \\ 
+            1. you are not using the simpleaf pipeline (`simpleaf index` + `simpleaf quant`), \\
             2. you have such a file, and,
             3. you want to add this information to the coldata of your anndata.
-        If you do, please ensure it is a tab-separated, two-column file without a header, and the first column is the gene ids and the second column is the gene names. 
+        If you do, please ensure it is a tab-separated, two-column file without a header, and the first column is the gene ids and the second column is the gene names.
 
     nonzero : `bool` (default: `False`)
         True if cells with non-zero expression value across all genes should be filtered in each layer.
@@ -105,12 +113,17 @@ def load_fry(frydir, output_format="scRNA", aux_columns = ["X", "Y"],gene_id_to_
     # first, check for the new file, if we don't find it, check
     # for the old one.
     if not os.path.exists(fpath):
-        say(quiet, f"Did not find a {meta_info_files[0]} file, checking for older {meta_info_files[1]}.")
+        say(
+            quiet,
+            f"Did not find a {meta_info_files[0]} file, checking for older {meta_info_files[1]}.",
+        )
 
         fpath = os.path.sep.join([frydir, meta_info_files[1]])
         # if we don't find the old one either, then return None
         if not os.path.exists(fpath):
-            raise IOError("The profvided `frydir` doesn't contain required meta info file; cannot proceed.")
+            raise IOError(
+                "The profvided `frydir` doesn't contain required meta info file; cannot proceed."
+            )
 
     # if we got here then we had a valid json file, so
     # use it to get the number of genes, and if we are
@@ -129,14 +142,19 @@ def load_fry(frydir, output_format="scRNA", aux_columns = ["X", "Y"],gene_id_to_
         ng = int(ng / 3)
         output_assays = process_output_format(output_format, quiet)
     else:
-        say(quiet,
-            "Processing input in standard mode, the count matrix will be stored in field 'X'."
+        say(
+            quiet,
+            "Processing input in standard mode, the count matrix will be stored in field 'X'.",
         )
         if output_format != "scRNA":
             say(quiet, "Output_format will be ignored.")
 
     # read the gene ids
-    afg_df = pd.read_table(os.path.sep.join([frydir, "alevin", "quants_mat_cols.txt"]), names=["gene_ids"])
+    afg_df = pd.read_table(
+        os.path.sep.join([frydir, "alevin", "quants_mat_cols.txt"]),
+        names=["gene_ids"],
+        nrows=ng
+    )
 
     # if we have a gene name to id mapping, use it
     # Otherwise, we see if there is a default mapping file
@@ -148,17 +166,24 @@ def load_fry(frydir, output_format="scRNA", aux_columns = ["X", "Y"],gene_id_to_
         default_gene_id_to_name_path = os.path.sep.join([frydir, "gene_id_to_name.tsv"])
         if os.path.exists(default_gene_id_to_name_path):
             gene_id_to_name_path = default_gene_id_to_name_path
-            say(quiet, f"Using simpleaf gene name to id mapping file: {gene_id_to_name_path}")
+            say(
+                quiet,
+                f"Using simpleaf gene id to name mapping file: {gene_id_to_name_path}",
+            )
 
     # read the file if we find it
     if gene_id_to_name_path is not None:
-        gene_id_to_name_df = pd.read_table(gene_id_to_name_path, names=["gene_ids", "gene_names"])
+        gene_id_to_name_df = pd.read_table(
+            gene_id_to_name_path, names=["gene_ids", "gene_names"]
+        )
         afg_df = pd.merge(afg_df, gene_id_to_name_df, on="gene_ids", how="left")
-    
+
     afg_df = afg_df.set_index("gene_ids", drop=False)
 
     # read the barcodes file
-    abc_df = pd.read_table(os.path.sep.join([frydir, "alevin", "quants_mat_rows.txt"]), header=None)
+    abc_df = pd.read_table(
+        os.path.sep.join([frydir, "alevin", "quants_mat_rows.txt"]), header=None
+    )
 
     # if column names and num columns don't match, match them
     # we have only barcode
@@ -171,11 +196,14 @@ def load_fry(frydir, output_format="scRNA", aux_columns = ["X", "Y"],gene_id_to_
     if abc_df.shape[1] != len(columns):
         ncol = min(abc_df.shape[1], len(columns))
 
-        say(quiet, f"Number of auxiliary columns in barcodes file does not match the provided column names. Using the first {ncol} columns in the barcode file with names: {columns[:ncol]}.")
+        say(
+            quiet,
+            f"Number of auxiliary columns in barcodes file does not match the provided column names. Using the first {ncol} columns in the barcode file with names: {columns[:ncol]}.",
+        )
 
         abc_df.columns = columns[:ncol]
         columns = columns[:ncol]
-    
+
     abc_df = abc_df.set_axis(columns, axis=1)
     abc_df = abc_df.set_index(columns[0], drop=False)
 
@@ -259,9 +287,10 @@ def process_output_format(output_format, quiet):
                 say(quiet, "A undefined Provided output_format string provided.")
                 say(quiet, "See function help message for details.")
                 raise ValueError("Invalid output_format.")
-            say(quiet, "Using pre-defined output format:", output_format)
-            say(quiet, 
-                f"Will populate output field X with sum of counts frorm {predefined_format[output_format]['X']}."
+            say(quiet, f"Using pre-defined output format: {output_format}")
+            say(
+                quiet,
+                f"Will populate output field X with sum of counts from {predefined_format[output_format]['X']}.",
             )
             for k, v in predefined_format[output_format].items():
                 if k != "X":
@@ -275,8 +304,9 @@ def process_output_format(output_format, quiet):
                 raise ValueError(
                     'In USA mode some sub-matrices must be assigned to the "X" (default) output.'
                 )
-            say(quiet,
-                f"Will populate output field X with sum of counts frorm {output_format['X']}."
+            say(
+                quiet,
+                f"Will populate output field X with sum of counts frorm {output_format['X']}.",
             )
 
             for k, v in output_format.items():
