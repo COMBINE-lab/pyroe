@@ -130,14 +130,6 @@ class TestFlexGene:
         assert adata.n_vars == 5
         assert "GENE000060" not in adata.var_names
 
-    def test_duplicate_ids_in_gene_id_to_name_raise(self, tmp_path):
-        d = _copy_fixture(tmp_path, "flex_gene")
-        path = os.path.join(d, "gene_id_to_name.tsv")
-        lines = _read_lines(path)
-        _write_lines(path, lines + [lines[0].split("\t")[0] + "\tOther"])
-        with pytest.raises(ValueError, match="duplicate"):
-            load_fry(d, quiet=True)
-
 
 class TestSampleSplit:
     def test_bad_featuredump_row_order_raises(self):

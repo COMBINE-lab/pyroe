@@ -128,7 +128,6 @@ An output without a ``sample_name`` column in ``featureDump.txt`` (for example a
 
 The ``gene_id_to_name.tsv`` of a Flex run can have more gene ids than the matrix columns.
 The function keeps only the matrix columns (a left join).
-It raises a ``ValueError`` if the file has a duplicate gene id.
 
 With ``--probe-mtx``, alevin-fry also writes the cell x probe matrix ``alevin/probe_quants_mat.mtx``, which ``feature_level="probe"`` loads.
 It has the same rows as the gene matrix, in the same order, and the sum of the probe counts of each gene is equal to the gene matrix.

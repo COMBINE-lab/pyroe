@@ -239,12 +239,6 @@ def load_fry(
         gene_id_to_name_df = pd.read_table(
             gene_id_to_name_path, names=["gene_ids", "gene_names"]
         )
-        dup = gene_id_to_name_df["gene_ids"][gene_id_to_name_df["gene_ids"].duplicated()]
-        if len(dup) > 0:
-            raise ValueError(
-                f"{gene_id_to_name_path} has {len(dup)} duplicate gene ids, "
-                f"for example '{dup.iloc[0]}'."
-            )
         # a left join: the file can have more ids than the matrix columns
         afg_df = pd.merge(afg_df, gene_id_to_name_df, on="gene_ids", how="left")
 
