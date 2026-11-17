@@ -8,6 +8,8 @@ def load_fry(
     gene_id_to_name=None,
     nonzero=False,
     quiet=False,
+    feature_level="gene",
+    probe_ref=None,
 ):
     """
     load alevin-fry quantification result into an AnnData object
@@ -45,6 +47,23 @@ def load_fry(
     quiet : `bool` (default: `False`)
         True if function should be quiet.
         False if messages (including error messages) should be printed out.
+
+    feature_level : `str` (default: `"gene"`)
+        "gene" loads the cell x gene matrix `alevin/quants_mat.mtx`.
+        "probe" loads the cell x probe matrix `alevin/probe_quants_mat.mtx`, which
+        `alevin-fry quant-probe --probe-mtx` (`simpleaf multiplex-quant --probe-mtx`)
+        writes. The function raises a `ValueError` if `quant.json` does not have
+        `"probe_mtx": true`.
+
+    probe_ref : `str` or `None` (default: `None`)
+        Only for `feature_level="probe"`. The 10x probe-set CSV of the run, which
+        maps each probe to its gene. If it is `None`, the function uses
+        `probe_set.csv` in `frydir`. The function raises a `FileNotFoundError`
+        if the file does not exist.
+        The function skips the lines at the top that start with `#`. The CSV must
+        have a `probe_id` column. The probes are joined to the CSV by `probe_id`,
+        because the probe column order of the matrix is not the order of the CSV.
+        The function raises a `ValueError` if a matrix probe is not in the CSV.
 
     Notes
     ----------
@@ -97,6 +116,21 @@ def load_fry(
     ----------
         An AnnData object with X and layers corresponding to the requested `output_format`.
 
+        * For a multiplex (Flex) run, the row label (`obs_names`, `obs["barcodes"]`) is
+          `<sample_name>_<cell_barcode>`, and `obs["sample_name"]` and
+          `obs["cell_barcode"]` give its two parts. They come from the `sample_name`
+          and `CB` columns of `featureDump.txt`, whose line i describes row i; the
+          function raises a `ValueError` if a line does not match its row. If
+          `featureDump.txt` does not exist, but `collation_manifest.bin` or
+          `sample_info.json` shows a multiplex run, the function gives a warning and
+          does not add the two columns. Other outputs get no new columns.
+        * With `feature_level="probe"`, `var_names` are the probe ids in
+          `probe_quants_mat_cols.txt`, and `var` is the probe-set CSV row of each
+          probe: all CSV columns, with their CSV names (for example `gene_id`,
+          `probe_seq`, `probe_id`, `included`, `region`, `gene_name`), as
+          `pandas.read_csv` reads them with its default settings: for example
+          `included` is a bool, and an empty value is `NaN`.
+
     """
     import json
     import os
@@ -132,6 +166,19 @@ def load_fry(
     ng = meta_info["num_genes"]
     usa_mode = meta_info["usa_mode"]
 
+    if feature_level not in ["gene", "probe"]:
+        raise ValueError(
+            f"feature_level must be 'gene' or 'probe', not '{feature_level}'."
+        )
+    probe_level = feature_level == "probe"
+    if probe_level and meta_info.get("probe_mtx") is not True:
+        raise ValueError(
+            f"feature_level='probe' needs a probe matrix, but {fpath} does not have "
+            "'probe_mtx': true. Run alevin-fry quant-probe (or simpleaf "
+            "multiplex-quant) with --probe-mtx."
+        )
+    mat_prefix = "probe_quants_mat" if probe_level else "quants_mat"
+
     say(quiet, f"USA mode: {usa_mode}")
 
     # if we are in USA mode
@@ -148,13 +195,6 @@ def load_fry(
         )
         if output_format != "scRNA":
             say(quiet, "Output_format will be ignored.")
-
-    # read the gene ids
-    afg_df = pd.read_table(
-        os.path.sep.join([frydir, "alevin", "quants_mat_cols.txt"]),
-        names=["gene_ids"],
-        nrows=ng
-    )
 
     # if we have a gene name to id mapping, use it
     # Otherwise, we see if there is a default mapping file
@@ -179,18 +219,28 @@ def load_fry(
                 f"Using simpleaf gene id to name mapping file: {gene_id_to_name_path}",
             )
 
+    if probe_level:
+        afg_df = _read_probe_var(frydir, _find_probe_ref(frydir, probe_ref))
+    else:
+        # read the gene ids
+        afg_df = pd.read_table(
+            os.path.sep.join([frydir, "alevin", "quants_mat_cols.txt"]),
+            names=["gene_ids"],
+            nrows=ng
+        )
+
     # read the file if we find it
-    if gene_id_to_name_path is not None:
+    if gene_id_to_name_path is not None and not probe_level:
         gene_id_to_name_df = pd.read_table(
             gene_id_to_name_path, names=["gene_ids", "gene_names"]
         )
         afg_df = pd.merge(afg_df, gene_id_to_name_df, on="gene_ids", how="left")
 
-    afg_df = afg_df.set_index("gene_ids", drop=False)
+    afg_df = afg_df.set_index("probe_id" if probe_level else "gene_ids", drop=False)
 
     # read the barcodes file
     abc_df = pd.read_table(
-        os.path.sep.join([frydir, "alevin", "quants_mat_rows.txt"]), header=None
+        os.path.sep.join([frydir, "alevin", f"{mat_prefix}_rows.txt"]), header=None
     )
 
     # if column names and num columns don't match, match them
@@ -214,9 +264,10 @@ def load_fry(
 
     abc_df = abc_df.set_axis(columns, axis=1)
     abc_df = abc_df.set_index(columns[0], drop=False)
+    abc_df = _add_sample_info(frydir, abc_df, quiet)
 
     say(quiet, "Reading the quantification matrix.")
-    af_raw = scanpy.read_mtx(os.path.sep.join([frydir, "alevin", "quants_mat.mtx"]))
+    af_raw = scanpy.read_mtx(os.path.sep.join([frydir, "alevin", f"{mat_prefix}.mtx"]))
     x = af_raw.X
     # if we're not in USA mode, just combine this info into
     # an AnnData object
@@ -261,6 +312,106 @@ def load_fry(
 
     say(quiet, "Done.")
     return af
+
+
+def _add_sample_info(frydir, abc_df, quiet):
+    """
+    For a multiplex run, add `cell_barcode` and `sample_name` to the row table
+    `abc_df`. The row label of a multiplex run is `<sample_name>_<CB>`.
+
+    If featureDump.txt has a `sample_name` column, use its `CB` and
+    `sample_name` columns: line i describes row i. If featureDump.txt does not
+    exist in a multiplex run, warn and add nothing. Other outputs do not change.
+    """
+    import os
+    import warnings
+    import numpy as np
+    import pandas as pd
+
+    labels = abc_df["barcodes"].astype(str).to_numpy()
+    fd_path = os.path.join(frydir, "featureDump.txt")
+
+    if os.path.exists(fd_path):
+        with open(fd_path) as f:
+            if "sample_name" not in f.readline().rstrip("\r\n").split("\t"):
+                return abc_df
+        # keep_default_na=False: a sample name such as "NA" stays a string
+        fd = pd.read_table(
+            fd_path, usecols=["CB", "sample_name"], dtype=str, keep_default_na=False
+        )
+        if fd.shape[0] != len(labels):
+            raise ValueError(
+                f"{fd_path} has {fd.shape[0]} cells, but the count matrix has {len(labels)} rows."
+            )
+        expected = (fd["sample_name"] + "_" + fd["CB"]).to_numpy()
+        bad = np.flatnonzero(expected != labels)
+        if bad.size > 0:
+            raise ValueError(
+                f"{fd_path} does not have the same row order as the rows file: "
+                f"{bad.size} rows are different. The first is row {bad[0] + 1}: "
+                f"'{expected[bad[0]]}' in featureDump.txt, '{labels[bad[0]]}' in the rows file."
+            )
+        abc_df["cell_barcode"] = fd["CB"].to_numpy()
+        abc_df["sample_name"] = fd["sample_name"].to_numpy()
+        return abc_df
+
+    multiplex_files = ["collation_manifest.bin", "sample_info.json"]
+    if any(os.path.exists(os.path.join(frydir, f)) for f in multiplex_files):
+        warnings.warn(
+            f"{fd_path} is missing in a multiplex run, so obs['sample_name'] and "
+            "obs['cell_barcode'] are not added."
+        )
+
+    return abc_df
+
+
+def _find_probe_ref(frydir, probe_ref):
+    """Return the path of the 10x probe-set CSV (see `load_fry`)."""
+    import os
+
+    path = probe_ref if probe_ref is not None else os.path.join(frydir, "probe_set.csv")
+    if not os.path.exists(path):
+        raise FileNotFoundError(
+            f"Cannot find the probe-set CSV: {path} does not exist. Give the 10x "
+            "probe-set CSV of the run with the probe_ref argument."
+        )
+    return path
+
+
+def _read_probe_var(frydir, probe_ref_path):
+    """
+    Return the rows of the 10x probe-set CSV for the probes of the probe
+    matrix, in the column order of `probe_quants_mat.mtx`. All CSV columns are
+    kept, as pandas reads them with its default settings.
+    """
+    import os
+    import pandas as pd
+
+    with open(probe_ref_path) as f:
+        n_meta = 0
+        for line in f:
+            if not line.startswith("#"):
+                break
+            n_meta += 1
+    csv = pd.read_csv(probe_ref_path, skiprows=n_meta)
+
+    probes = pd.read_table(
+        os.path.join(frydir, "alevin", "probe_quants_mat_cols.txt"),
+        names=["probe_id"],
+        dtype=str,
+        keep_default_na=False,
+    )
+    # join by name: the matrix column order is not the order of the CSV
+    var = pd.merge(
+        probes, csv, on="probe_id", how="left", validate="one_to_one", indicator=True
+    )
+    missing = var["probe_id"][var["_merge"] == "left_only"]
+    if len(missing) > 0:
+        raise ValueError(
+            f"{len(missing)} probes of the probe matrix are not in {probe_ref_path}, "
+            f"for example '{missing.iloc[0]}'."
+        )
+    return var.drop(columns="_merge")[csv.columns]
 
 
 def process_output_format(output_format, quiet):
