@@ -3,6 +3,7 @@ import json
 
 from .load_fry import load_fry
 from .load_fry import process_output_format
+from .load_fry import PREDEFINED_FORMATS
 from .pyroe_utils import output_formats
 
 
@@ -31,8 +32,8 @@ def validate_convert_args(args):
     # if we don't have one of these, then attempt to covert
     # the string to a dictionary.
     out_struct = {}
-    if args.output_structure in ["scRNA", "snRNA", "raw", "velocity"]:
-        args.ouput_structure = process_output_format(args.output_structure, True)
+    if args.output_structure.lower() in PREDEFINED_FORMATS:
+        args.output_structure = process_output_format(args.output_structure, True)
     else:
         try:
             out_struct = ast.literal_eval(args.output_structure)
