@@ -79,10 +79,14 @@ def load_fry(
 
     The following formats are defined:
 
-    * "scRNA" and "S+A": \\
+    * "scRNA": \\
         This format is recommended for single cell RNA-sequencing experiments.
         It returns a `X` field that contains the S+A count of each gene in each cell,
         and a `unspliced` field that contains the U count of each gene.
+
+    * "S+A": \\
+        This format returns a `X` field that contains the S+A count of each gene
+        in each cell, without any extra layers.
 
     * "snRNA", "all" and "U+S+A": \\
         These three formats are the same. They return a `X` field that contains the U+S+A
