@@ -10,7 +10,6 @@ import pytest
 import scipy.io
 
 from pyroe import load_fry
-from pyroe.load_fry import PROBE_VAR_COLUMNS
 
 FLEX_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "flex")
 LEGACY = os.path.join(FLEX_DIR, "legacy_usa")
@@ -41,11 +40,22 @@ def _gene_names(d):
     return dict(line.split("\t") for line in _read_lines(os.path.join(d, "gene_id_to_name.tsv")))
 
 
+def _csv_header(path):
+    return next(x for x in _read_lines(path) if not x.startswith("#")).split(",")
+
+
 def _csv_rows(path):
     """The data rows of a probe-set CSV as dicts, keyed by probe_id."""
     lines = [line for line in _read_lines(path) if not line.startswith("#")]
     head = lines[0].split(",")
     return {r["probe_id"]: r for r in (dict(zip(head, x.split(","))) for x in lines[1:])}
+
+
+def _assert_var_is_csv(var, path):
+    """var has the CSV header as columns and the CSV row of each probe, as text."""
+    rows = _csv_rows(path)
+    assert var.columns.tolist() == _csv_header(path)
+    assert var.to_dict("records") == [rows[p] for p in var.index]
 
 
 @pytest.fixture(scope="module")
@@ -169,13 +179,9 @@ class TestFlexProbe:
         assert flex_probe.var_names.tolist() == cols
         assert flex_probe.var["probe_id"].tolist() == cols
 
-    def test_var_columns_come_from_probe_set_csv(self, flex_probe):
-        rows = _csv_rows(PROBE_SET)
-        var = flex_probe.var
-        assert var.columns.tolist() == PROBE_VAR_COLUMNS
-        assert var["gene_ids"].tolist() == [rows[p]["gene_id"] for p in var.index]
-        assert var["gene_names"].tolist() == [rows[p]["gene_name"] for p in var.index]
-        assert var["region"].tolist() == [rows[p]["region"] for p in var.index]
+    def test_var_is_the_probe_set_csv_as_is(self, flex_probe):
+        _assert_var_is_csv(flex_probe.var, PROBE_SET)
+        assert set(flex_probe.var["included"]) == {"TRUE"}
 
     def test_excluded_probes_are_not_in_var(self, flex_probe):
         rows = _csv_rows(PROBE_SET)
@@ -189,20 +195,29 @@ class TestFlexProbe:
         adata = load_fry(d, feature_level="probe", probe_ref=PROBE_SET, quiet=True)
         assert adata.var.equals(flex_probe.var)
 
-    def test_old_format_csv_takes_gene_names_from_gene_id_to_name(self, flex_probe):
+    def test_old_format_csv_gives_its_own_columns(self):
         adata = load_fry(FLEX_PROBE, feature_level="probe", probe_ref=PROBE_SET_V1, quiet=True)
-        assert adata.var.columns.tolist() == ["probe_id", "gene_ids", "gene_names"]
-        assert adata.var["gene_names"].equals(flex_probe.var["gene_names"])
+        _assert_var_is_csv(adata.var, PROBE_SET_V1)
+        assert "gene_name" not in adata.var.columns
 
-    def test_empty_gene_name_and_region_are_nan(self, tmp_path):
+    def test_empty_values_stay_empty_strings(self, tmp_path):
         ref = str(tmp_path / "probe_set.csv")
         lines = _read_lines(PROBE_SET)
         i = next(k for k, line in enumerate(lines) if line.startswith("GENE000010,"))
         lines[i] = ",".join(lines[i].split(",")[:4] + ["", ""])
         _write_lines(ref, lines)
         adata = load_fry(FLEX_PROBE, feature_level="probe", probe_ref=ref, quiet=True)
-        row = adata.var[adata.var["gene_ids"] == "GENE000010"]
-        assert row["gene_names"].isna().all() and row["region"].isna().all()
+        _assert_var_is_csv(adata.var, ref)
+        row = adata.var[adata.var["gene_id"] == "GENE000010"]
+        assert row["gene_name"].tolist() == [""] and row["region"].tolist() == [""]
+
+    def test_extra_csv_column_is_kept(self, tmp_path):
+        ref = str(tmp_path / "probe_set.csv")
+        lines = _read_lines(PROBE_SET)
+        _write_lines(ref, [x if x.startswith("#") else x + ",note" for x in lines])
+        adata = load_fry(FLEX_PROBE, feature_level="probe", probe_ref=ref, quiet=True)
+        _assert_var_is_csv(adata.var, ref)
+        assert adata.var.columns.tolist()[-1] == "note"
 
     def test_no_csv_found_raises_with_path(self, tmp_path):
         d = _copy_fixture(tmp_path, "flex_probe")
@@ -229,17 +244,11 @@ class TestFlexProbe:
         with pytest.raises(ValueError):
             load_fry(FLEX_PROBE, feature_level="probe", probe_ref=ref, quiet=True)
 
-    def test_csv_without_gene_id_raises(self, tmp_path):
-        ref = str(tmp_path / "probe_set.csv")
-        _write_lines(ref, [x.replace("gene_id,", "gene,", 1) for x in _read_lines(PROBE_SET)])
-        with pytest.raises(ValueError, match="gene_id"):
-            load_fry(FLEX_PROBE, feature_level="probe", probe_ref=ref, quiet=True)
-
     def test_probe_sum_by_gene_equals_gene_matrix(self, flex_probe):
         gene = load_fry(FLEX_PROBE, quiet=True)
         genes = gene.var_names.tolist()
         p2g = np.zeros((flex_probe.n_vars, gene.n_vars))
-        for j, g in enumerate(flex_probe.var["gene_ids"]):
+        for j, g in enumerate(flex_probe.var["gene_id"]):
             p2g[j, genes.index(g)] = 1
         assert np.array_equal(flex_probe.X.toarray() @ p2g, gene.X.toarray())
 
@@ -253,7 +262,7 @@ class TestFlexProbe:
     def test_nonzero_removes_zero_count_probe(self):
         adata = load_fry(FLEX_PROBE, feature_level="probe", nonzero=True, quiet=True)
         assert adata.n_vars == 6
-        assert "GENE000060" not in adata.var["gene_ids"].tolist()
+        assert "GENE000060" not in adata.var["gene_id"].tolist()
 
     @pytest.mark.parametrize("name", ["flex_gene", "legacy_usa"])
     def test_probe_level_without_probe_mtx_raises(self, name):

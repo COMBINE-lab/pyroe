@@ -135,8 +135,8 @@ The probe reference is the original 10x probe-set CSV.
 The function uses the ``probe_ref`` argument, or else ``probe_set.csv`` in ``frydir``.
 
 * The function skips the lines at the top that start with ``#``.
-* The CSV must have the columns ``probe_id`` and ``gene_id``. The columns ``gene_name`` and ``region`` are optional.
+* The CSV must have a ``probe_id`` column.
 * The probe columns are not in the order of the CSV, so the function joins the probes to the CSV by ``probe_id``. It raises a ``ValueError`` if a matrix probe is not in the CSV, or if a probe id occurs two times in the CSV.
-* ``var_names`` and ``var["probe_id"]`` are the probe ids. ``var["gene_ids"]``, ``var["gene_names"]`` and ``var["region"]`` come from the ``gene_id``, ``gene_name`` and ``region`` columns. An empty value is ``NaN``.
+* ``var_names`` are the probe ids. ``var`` is the CSV row of each matrix probe: all CSV columns, with their CSV names (for example ``gene_id``, ``probe_seq``, ``probe_id``, ``included``, ``region`` and ``gene_name``). Probes that are not matrix columns (for example ``included=FALSE``) are not in ``var``.
+* All values are text, as written in the CSV (for example ``included`` is ``"TRUE"``). An empty value is an empty string.
 * A 10x "unspliced" probe does not span a splice junction; it does not mean pre-mRNA.
-* If the CSV has no ``gene_name`` column (older formats), the gene names come from the gene id to name file.
