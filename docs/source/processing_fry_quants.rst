@@ -133,11 +133,10 @@ With ``--probe-mtx``, alevin-fry also writes the cell x probe matrix ``alevin/pr
 It has the same rows as the gene matrix, in the same order, and the sum of the probe counts of each gene is equal to the gene matrix.
 The probe reference is the original 10x probe-set CSV.
 The function uses the ``probe_ref`` argument, or else ``probe_set.csv`` in ``frydir``.
-A future simpleaf version will copy the CSV to ``af_quant/probe_set.csv``; simpleaf 0.31 does not, so give the CSV with ``probe_ref``.
 
 * The function skips the lines at the top that start with ``#``.
 * The CSV must have the columns ``probe_id`` and ``gene_id``. The columns ``gene_name`` and ``region`` are optional.
 * The probe columns are not in the order of the CSV, so the function joins the probes to the CSV by ``probe_id``. It raises a ``ValueError`` if a matrix probe is not in the CSV, or if a probe id occurs two times in the CSV.
 * ``var_names`` and ``var["probe_id"]`` are the probe ids. ``var["gene_ids"]``, ``var["gene_names"]`` and ``var["region"]`` come from the ``gene_id``, ``gene_name`` and ``region`` columns. An empty value is ``NaN``.
-* ``region`` must be ``spliced``, ``unspliced`` or empty. The value "unspliced" does not mean pre-mRNA: a 10x "unspliced" probe does not span a splice junction.
+* A 10x "unspliced" probe does not span a splice junction; it does not mean pre-mRNA.
 * If the CSV has no ``gene_name`` column (older formats), the gene names come from the gene id to name file.

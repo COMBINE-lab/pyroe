@@ -229,12 +229,6 @@ class TestFlexProbe:
         with pytest.raises(ValueError):
             load_fry(FLEX_PROBE, feature_level="probe", probe_ref=ref, quiet=True)
 
-    def test_unknown_region_value_raises(self, tmp_path):
-        ref = str(tmp_path / "probe_set.csv")
-        _write_lines(ref, [x.replace(",unspliced,", ",U,") for x in _read_lines(PROBE_SET)])
-        with pytest.raises(ValueError, match="spliced"):
-            load_fry(FLEX_PROBE, feature_level="probe", probe_ref=ref, quiet=True)
-
     def test_csv_without_gene_id_raises(self, tmp_path):
         ref = str(tmp_path / "probe_set.csv")
         _write_lines(ref, [x.replace("gene_id,", "gene,", 1) for x in _read_lines(PROBE_SET)])

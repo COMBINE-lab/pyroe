@@ -61,9 +61,8 @@ def load_fry(
     probe_ref : `str` or `None` (default: `None`)
         Only for `feature_level="probe"`. The 10x probe-set CSV of the run, which
         maps each probe to its gene. If it is `None`, the function uses
-        `probe_set.csv` in `frydir` (a future simpleaf version will copy the
-        probe-set CSV to this path; simpleaf 0.31 does not). The function raises
-        a `FileNotFoundError` if the file does not exist.
+        `probe_set.csv` in `frydir`. The function raises a `FileNotFoundError`
+        if the file does not exist.
         The function skips the lines at the top that start with `#`. The CSV must
         have the columns `probe_id` and `gene_id`; `gene_name` and `region` are
         optional. The probes are joined to the CSV by `probe_id`, because the
@@ -132,9 +131,9 @@ def load_fry(
           label on the last `_`. Other outputs get no new columns.
         * With `feature_level="probe"`, `var_names` and `var["probe_id"]` are the
           probe ids in `probe_quants_mat_cols.txt`, and `var["gene_ids"]`,
-          `var["gene_names"]` and `var["region"]` ("spliced" or "unspliced") come
-          from the probe-set CSV. An empty value is `NaN`. "unspliced" does not
-          mean pre-mRNA: a 10x "unspliced" probe does not span a splice junction.
+          `var["gene_names"]` and `var["region"]` come from the probe-set CSV.
+          An empty value is `NaN`. A 10x "unspliced" probe does not span a splice
+          junction; it does not mean pre-mRNA.
 
     """
     import json
@@ -234,12 +233,11 @@ def load_fry(
             nrows=ng
         )
 
-    # read the file if we find it, and if the probe-set CSV has no gene names
+    # read the file if we find it
     if gene_id_to_name_path is not None and "gene_names" not in afg_df.columns:
         gene_id_to_name_df = pd.read_table(
             gene_id_to_name_path, names=["gene_ids", "gene_names"]
         )
-        # a left join: the file can have more ids than the matrix columns
         afg_df = pd.merge(afg_df, gene_id_to_name_df, on="gene_ids", how="left")
 
     if probe_level:
@@ -419,13 +417,6 @@ def _read_probe_var(frydir, probe_ref_path):
             f"The probe-set CSV {probe_ref_path} does not have the columns {missing}."
         )
     csv = csv.rename(columns={"gene_id": "gene_ids", "gene_name": "gene_names"})
-    if "region" in csv.columns:
-        bad = sorted(set(csv["region"]) - {"spliced", "unspliced", ""})
-        if bad:
-            raise ValueError(
-                f"The region column of {probe_ref_path} must have only 'spliced', "
-                f"'unspliced' or an empty value, not {bad}."
-            )
     for col in ["gene_names", "region"]:
         if col in csv.columns:
             csv[col] = csv[col].where(csv[col] != "")
