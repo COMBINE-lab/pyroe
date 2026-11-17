@@ -56,7 +56,7 @@ The following formats are defined:
     This format uses the S count matrix as the `X` field and put the U, S, and A counts into three separate layers, which are `unspliced`, `spliced` and `ambiguous`.
 
 * "S+A": \
-    This format uses the  U + S counts as the `X` field without any extra layers.
+    This format uses the S + A counts as the `X` field without any extra layers.
 
 * "velocity": \
     This format is the same as "scRNA", except it contains a `spliced` layer, 

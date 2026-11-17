@@ -98,7 +98,8 @@ if __name__ == "__main__":
     )
     parser_convert.add_argument(
         "--output-structure",
-        help="The structure that U,S and A counts should occupy in the output matrix. It will be passed to the output_format argument of the `load_fry` function.",
+        default="scRNA",
+        help="The structure that U,S and A counts should occupy in the output matrix. It will be passed to the output_format argument of the `load_fry` function. It is a pre-defined format name (for example scRNA, S+A, snRNA, U+S+A, velocity, raw), or a Python dictionary as a string. The default is scRNA, the same default as `load_fry`.",
     )
     parser_convert.add_argument(
         "--output-format",
