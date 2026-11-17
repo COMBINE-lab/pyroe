@@ -7,6 +7,7 @@ import warnings
 
 import anndata
 import numpy as np
+import pandas as pd
 import pytest
 import scipy.io
 
@@ -41,22 +42,18 @@ def _gene_names(d):
     return dict(line.split("\t") for line in _read_lines(os.path.join(d, "gene_id_to_name.tsv")))
 
 
-def _csv_header(path):
-    return next(x for x in _read_lines(path) if not x.startswith("#")).split(",")
-
-
 def _csv_rows(path):
-    """The data rows of a probe-set CSV as dicts, keyed by probe_id."""
+    """The data rows of a probe-set CSV as dicts of text, keyed by probe_id."""
     lines = [line for line in _read_lines(path) if not line.startswith("#")]
     head = lines[0].split(",")
     return {r["probe_id"]: r for r in (dict(zip(head, x.split(","))) for x in lines[1:])}
 
 
 def _assert_var_is_csv(var, path):
-    """var has the CSV header as columns and the CSV row of each probe, as text."""
-    rows = _csv_rows(path)
-    assert var.columns.tolist() == _csv_header(path)
-    assert var.to_dict("records") == [rows[p] for p in var.index]
+    """var is the CSV (read with pandas defaults) row of each probe, in var order."""
+    csv = pd.read_csv(path, comment="#")
+    expected = csv.set_index("probe_id", drop=False).loc[var.index]
+    pd.testing.assert_frame_equal(var, expected, check_names=False)
 
 
 @pytest.fixture(scope="module")
@@ -176,7 +173,8 @@ class TestFlexProbe:
 
     def test_var_is_the_probe_set_csv_as_is(self, flex_probe):
         _assert_var_is_csv(flex_probe.var, PROBE_SET)
-        assert set(flex_probe.var["included"]) == {"TRUE"}
+        assert flex_probe.var["included"].dtype == bool
+        assert flex_probe.var["included"].all()
 
     def test_excluded_probes_are_not_in_var(self, flex_probe):
         rows = _csv_rows(PROBE_SET)
@@ -195,7 +193,7 @@ class TestFlexProbe:
         _assert_var_is_csv(adata.var, PROBE_SET_V1)
         assert "gene_name" not in adata.var.columns
 
-    def test_empty_values_stay_empty_strings(self, tmp_path):
+    def test_empty_values_are_nan(self, tmp_path):
         ref = str(tmp_path / "probe_set.csv")
         lines = _read_lines(PROBE_SET)
         i = next(k for k, line in enumerate(lines) if line.startswith("GENE000010,"))
@@ -204,7 +202,7 @@ class TestFlexProbe:
         adata = load_fry(FLEX_PROBE, feature_level="probe", probe_ref=ref, quiet=True)
         _assert_var_is_csv(adata.var, ref)
         row = adata.var[adata.var["gene_id"] == "GENE000010"]
-        assert row["gene_name"].tolist() == [""] and row["region"].tolist() == [""]
+        assert row["gene_name"].isna().all() and row["region"].isna().all()
 
     def test_extra_csv_column_is_kept(self, tmp_path):
         ref = str(tmp_path / "probe_set.csv")

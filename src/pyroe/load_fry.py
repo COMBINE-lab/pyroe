@@ -127,9 +127,9 @@ def load_fry(
         * With `feature_level="probe"`, `var_names` are the probe ids in
           `probe_quants_mat_cols.txt`, and `var` is the probe-set CSV row of each
           probe: all CSV columns, with their CSV names (for example `gene_id`,
-          `probe_seq`, `probe_id`, `included`, `region`, `gene_name`). All values
-          are text, as written in the CSV (for example `included` is "TRUE"), and an
-          empty value is an empty string.
+          `probe_seq`, `probe_id`, `included`, `region`, `gene_name`), as
+          `pandas.read_csv` reads them with its default settings: for example
+          `included` is a bool, and an empty value is `NaN`.
 
     """
     import json
@@ -382,7 +382,7 @@ def _read_probe_var(frydir, probe_ref_path):
     """
     Return the rows of the 10x probe-set CSV for the probes of the probe
     matrix, in the column order of `probe_quants_mat.mtx`. All CSV columns are
-    kept, as text.
+    kept, as pandas reads them with its default settings.
     """
     import os
     import pandas as pd
@@ -393,7 +393,7 @@ def _read_probe_var(frydir, probe_ref_path):
             if not line.startswith("#"):
                 break
             n_meta += 1
-    csv = pd.read_csv(probe_ref_path, skiprows=n_meta, dtype=str, keep_default_na=False)
+    csv = pd.read_csv(probe_ref_path, skiprows=n_meta)
 
     probes = pd.read_table(
         os.path.join(frydir, "alevin", "probe_quants_mat_cols.txt"),

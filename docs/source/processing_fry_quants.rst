@@ -137,5 +137,5 @@ The function uses the ``probe_ref`` argument, or else ``probe_set.csv`` in ``fry
 * The CSV must have a ``probe_id`` column.
 * The probe columns are not in the order of the CSV, so the function joins the probes to the CSV by ``probe_id``. It raises a ``ValueError`` if a matrix probe is not in the CSV, or if a probe id occurs two times in the CSV.
 * ``var_names`` are the probe ids. ``var`` is the CSV row of each matrix probe: all CSV columns, with their CSV names (for example ``gene_id``, ``probe_seq``, ``probe_id``, ``included``, ``region`` and ``gene_name``). Probes that are not matrix columns (for example ``included=FALSE``) are not in ``var``.
-* All values are text, as written in the CSV (for example ``included`` is ``"TRUE"``). An empty value is an empty string.
+* The values are as ``pandas.read_csv`` reads them with its default settings: for example ``included`` is a bool, and an empty value is ``NaN``.
 * A 10x "unspliced" probe does not span a splice junction; it does not mean pre-mRNA.
