@@ -122,8 +122,8 @@ def load_fry(
           and `CB` columns of `featureDump.txt`, whose line i describes row i; the
           function raises a `ValueError` if a line does not match its row. If
           `featureDump.txt` does not exist, but `collation_manifest.bin` or
-          `sample_info.json` shows a multiplex run, the function splits the row
-          label on the last `_`. Other outputs get no new columns.
+          `sample_info.json` shows a multiplex run, the function gives a warning and
+          does not add the two columns. Other outputs get no new columns.
         * With `feature_level="probe"`, `var_names` are the probe ids in
           `probe_quants_mat_cols.txt`, and `var` is the probe-set CSV row of each
           probe: all CSV columns, with their CSV names (for example `gene_id`,
@@ -321,10 +321,10 @@ def _add_sample_info(frydir, abc_df, quiet):
 
     If featureDump.txt has a `sample_name` column, use its `CB` and
     `sample_name` columns: line i describes row i. If featureDump.txt does not
-    exist and the directory is from a multiplex run, split the row label on the
-    last `_` (the barcode has no `_`). Other outputs do not change.
+    exist in a multiplex run, warn and add nothing. Other outputs do not change.
     """
     import os
+    import warnings
     import numpy as np
     import pandas as pd
 
@@ -357,21 +357,10 @@ def _add_sample_info(frydir, abc_df, quiet):
 
     multiplex_files = ["collation_manifest.bin", "sample_info.json"]
     if any(os.path.exists(os.path.join(frydir, f)) for f in multiplex_files):
-        say(
-            quiet,
-            "No featureDump.txt in a multiplex run; splitting the row labels on the last '_'.",
+        warnings.warn(
+            f"{fd_path} is missing in a multiplex run, so obs['sample_name'] and "
+            "obs['cell_barcode'] are not added."
         )
-        split = pd.Series(labels).str.rsplit("_", n=1, expand=True)
-        if (
-            split.shape[1] != 2
-            or not split[1].fillna("").str.fullmatch("[ACGT]+").all()
-        ):
-            raise ValueError(
-                "Cannot split the row labels of a multiplex run into <sample_name>_<barcode>: "
-                "some labels do not end with '_' and an A/C/G/T barcode."
-            )
-        abc_df["cell_barcode"] = split[1].to_numpy()
-        abc_df["sample_name"] = split[0].to_numpy()
 
     return abc_df
 

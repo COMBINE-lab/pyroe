@@ -122,8 +122,7 @@ The rows of one sample are not together, and the row order can change between ru
 For a multiplex run, ``obs["sample_name"]`` and ``obs["cell_barcode"]`` give the two parts of the row label.
 They come from the ``sample_name`` and ``CB`` columns of ``featureDump.txt``, whose line *i* describes row *i* of the matrix.
 The function raises a ``ValueError`` if the number or the order of the lines does not match the rows.
-If ``featureDump.txt`` does not exist, and ``collation_manifest.bin`` or ``sample_info.json`` is in ``frydir``, the function splits each row label on the last ``_``.
-The barcode contains only ``A``, ``C``, ``G`` and ``T``, so this split is correct.
+If ``featureDump.txt`` does not exist, and ``collation_manifest.bin`` or ``sample_info.json`` is in ``frydir``, the function gives a warning and does not add ``obs["sample_name"]`` and ``obs["cell_barcode"]``.
 An output without a ``sample_name`` column in ``featureDump.txt`` (for example a single-sample run) gets no new columns.
 
 The ``gene_id_to_name.tsv`` of a Flex run can have more gene ids than the matrix columns.

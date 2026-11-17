@@ -3,6 +3,7 @@
 import json
 import os
 import shutil
+import warnings
 
 import anndata
 import numpy as np
@@ -153,23 +154,17 @@ class TestSampleSplit:
         with pytest.raises(ValueError, match="rows"):
             load_fry(d, quiet=True)
 
-    def test_without_featuredump_split_on_last_underscore(self, flex_gene):
-        adata = load_fry(os.path.join(FLEX_DIR, "flex_no_featuredump"), quiet=True)
-        assert adata.obs.equals(flex_gene.obs)
+    def test_multiplex_without_featuredump_warns_and_adds_nothing(self):
+        with pytest.warns(UserWarning, match="featureDump.txt is missing"):
+            adata = load_fry(os.path.join(FLEX_DIR, "flex_no_featuredump"), quiet=True)
+        assert adata.obs.columns.tolist() == ["barcodes"]
 
-    def test_without_featuredump_bad_label_raises(self, tmp_path):
-        d = _copy_fixture(tmp_path, "flex_no_featuredump")
-        path = os.path.join(d, "alevin", "quants_mat_rows.txt")
-        lines = _read_lines(path)
-        lines[0] = lines[0].replace("_", "-")
-        _write_lines(path, lines)
-        with pytest.raises(ValueError, match="Cannot split"):
-            load_fry(d, quiet=True)
-
-    def test_without_featuredump_or_multiplex_files_no_split(self, tmp_path):
+    def test_without_featuredump_or_multiplex_files_no_warning(self, tmp_path):
         d = _copy_fixture(tmp_path, "flex_no_featuredump")
         os.remove(os.path.join(d, "sample_info.json"))
-        adata = load_fry(d, quiet=True)
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", UserWarning)
+            adata = load_fry(d, quiet=True)
         assert adata.obs.columns.tolist() == ["barcodes"]
 
 
