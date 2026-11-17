@@ -1,5 +1,27 @@
 from .pyroe_utils import say
 
+# The pre-defined USA output formats of `load_fry`.
+# The keys are lower case, because `process_output_format` makes the
+# input string lower case before the lookup.
+PREDEFINED_FORMATS = {
+    "scrna": {"X": ["S", "A"], "unspliced": ["U"]},
+    "s+a": {"X": ["S", "A"]},
+    "snrna": {"X": ["U", "S", "A"]},
+    "all": {"X": ["U", "S", "A"]},
+    "u+s+a": {"X": ["U", "S", "A"]},
+    "velocity": {
+        "X": ["S", "A"],
+        "spliced": ["S", "A"],
+        "unspliced": ["U"],
+    },
+    "raw": {
+        "X": ["S"],
+        "spliced": ["S"],
+        "unspliced": ["U"],
+        "ambiguous": ["A"],
+    },
+}
+
 
 def load_fry(
     frydir,
@@ -270,24 +292,7 @@ def process_output_format(output_format, quiet):
 
     if isinstance(output_format, (str, dict)):
         if isinstance(output_format, str):
-            predefined_format = {
-                "scrna": {"X": ["S", "A"], "unspliced": ["U"]},
-                "S+A": {"X": ["S", "A"]},
-                "snrna": {"X": ["U", "S", "A"]},
-                "all": {"X": ["U", "S", "A"]},
-                "U+S+A": {"X": ["U", "S", "A"]},
-                "velocity": {
-                    "X": ["S", "A"],
-                    "spliced": ["S", "A"],
-                    "unspliced": ["U"],
-                },
-                "raw": {
-                    "X": ["S"],
-                    "spliced": ["S"],
-                    "unspliced": ["U"],
-                    "ambiguous": ["A"],
-                },
-            }
+            predefined_format = PREDEFINED_FORMATS
 
             output_format = output_format.lower()
             if output_format not in predefined_format.keys():
