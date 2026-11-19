@@ -267,8 +267,7 @@ def load_fry(
     abc_df = _add_sample_info(frydir, abc_df, quiet)
 
     say(quiet, "Reading the quantification matrix.")
-    af_raw = scanpy.read_mtx(os.path.sep.join([frydir, "alevin", f"{mat_prefix}.mtx"]))
-    x = af_raw.X
+    x = _read_mtx(os.path.sep.join([frydir, "alevin", f"{mat_prefix}.mtx"]))
     # if we're not in USA mode, just combine this info into
     # an AnnData object
     if not usa_mode:
@@ -312,6 +311,200 @@ def load_fry(
 
     say(quiet, "Done.")
     return af
+
+
+def _read_mtx(path, block_bytes=8 << 20):
+    """
+    Read a Matrix Market file into a `scipy.sparse.csr_matrix`.
+
+    The result is the same as `scanpy.read_mtx(path).X`: float32 data,
+    int32 indices and indptr (int64 if the matrix is too large for int32),
+    sorted columns in each row. A coordinate file with two entries for the
+    same row and column is refused (alevin-fry does not write such files).
+    An array (dense) file is read with `scipy.io.mmread`, as before.
+
+    The function does not keep the full COO matrix in memory. It reads the
+    file two times, one block of whole lines at a time, and parses each block
+    with `scipy.io.mmread`. The first pass counts the entries in each row.
+    The second pass writes each entry into its row of the result, with a
+    cursor for each row. Thus the peak memory is approximately the size of
+    the result plus one block, for any order of the entries in the file.
+    """
+    import io
+    import itertools
+    import os
+    import numpy as np
+    import scipy
+    from packaging.version import Version
+    from scipy.io import mmread
+    from scipy.sparse import csr_matrix
+
+    class Parts:
+        # a stream that gives one part for each read() call, without a copy
+        def __init__(self, parts):
+            self.parts = [p for p in reversed(parts) if p]
+
+        def read(self, size=-1):
+            return self.parts.pop() if self.parts else b""
+
+    # scipy >= 1.12 reads with fast_matrix_market; the older mmread is
+    # written in Python
+    fmm = Version(scipy.__version__).release >= (1, 12)  # also 1.12.0rc1
+
+    def stream(parts):
+        # fast_matrix_market uses only read(); the older mmread also needs
+        # readline(), so join the parts
+        return Parts(parts) if fmm else io.BytesIO(b"".join(parts))
+
+    with open(path, "rb") as f:
+        banner = f.readline()
+        if b" coordinate " not in banner:  # a dense array: read it as before
+            return csr_matrix(mmread(path).astype(np.float32))
+        size, line = f.readline(), 2  # line: the line number of size
+        while size.startswith(b"%") or not size.strip():
+            if not size:
+                raise ValueError(f"{path} has no size line (rows, columns, entries).")
+            size, line = f.readline(), line + 1
+        body = f.tell()
+    nrows, ncols, nlines = (int(v) for v in size.split())
+    # at least 8 blocks, so that a small file also needs less memory than
+    # the full COO matrix
+    block_bytes = min(block_bytes, max(1 << 16, os.path.getsize(path) // 8))
+
+    # the body lines that mmread skips, as today: lines of only these bytes,
+    # and with the older mmread also lines that start with "%"
+    skip = b" \t\r" if fmm else b" \t\r\v\f"
+    blank = np.zeros(256, dtype=bool)
+    blank[list(skip)] = True
+
+    def entry_lines(text, tail, exact):
+        # the number of line ends in text + tail, and the number of lines
+        # that are not blank (exact=True) or of all lines (exact=False);
+        # the Matrix Market format allows blank lines after the first line
+        a = np.frombuffer(text, np.uint8)
+        is_end = a == 10
+        ends = int(np.count_nonzero(is_end))
+        n = ends
+        if exact:  # go back from each line end over the blank bytes
+            end = np.flatnonzero(is_end)
+            first = np.r_[0, end[:-1] + 1]  # the first byte of each line
+            pos = end - 1
+            todo = np.flatnonzero(pos >= first)
+            n -= end.size - todo.size  # empty lines
+            while todo.size:
+                todo = todo[blank[a[pos[todo]]]]
+                pos[todo] -= 1
+                done = pos[todo] < first[todo]
+                n -= int(np.count_nonzero(done))
+                todo = todo[~done]
+            if not fmm:
+                n -= int(np.count_nonzero(a[first] == 37))  # "%"
+        last = text[text.rfind(b"\n") + 1:] + tail  # the line that tail ends
+        data = bool(last.strip(skip + b"\n")) and (fmm or last[:1] != b"%")
+        return n + data, ends + tail.endswith(b"\n")
+
+    def parse(n, text, tail, first_line):
+        if not n:
+            return None
+        head = banner + b"%d %d %d\n" % (nrows, ncols, n)
+        try:
+            return mmread(stream([head, text, tail]))
+        except ValueError as e:
+            raise ValueError(
+                f"{path}: cannot read the entry lines from file line {first_line} "
+                f"on (line 3 in the message below is file line {first_line}): {e}"
+            ) from e
+
+    counts = []  # (entry lines, line ends) of each block, from pass 1
+
+    def blocks(first_pass):
+        # yield the (row, col, value) arrays of each block of whole lines
+        first_line = line + 1
+        with open(path, "rb") as f:
+            f.seek(body)
+            for i in itertools.count():
+                text = f.read(block_bytes)
+                if not text:
+                    break
+                tail = f.readline()  # the rest of the last line
+                if not first_pass:
+                    m = parse(counts[i][0], text, tail, first_line)
+                else:
+                    n, ends = entry_lines(text, tail, exact=False)
+                    try:
+                        m = parse(n, text, tail, first_line)
+                    except ValueError:
+                        # blank lines make the first count too large
+                        k = entry_lines(text, tail, exact=True)[0]
+                        if k == n:
+                            raise
+                        n = k
+                        m = parse(n, text, tail, first_line)
+                    counts.append((n, ends))
+                first_line += counts[i][1]
+                if m is not None:
+                    yield m.row, m.col, m.data
+
+    def runs(row):
+        # the start, row and length of each run of equal row values; start
+        # and length are int32, because a block has less than 2**31 entries
+        start = np.flatnonzero(row[1:] != row[:-1]).astype(np.int32)
+        start += 1
+        start = np.concatenate((np.zeros(1, np.int32), start))
+        return start, row[start], np.diff(start, append=np.int32(row.size))
+
+    # pass 1: the number of entries in each row
+    row_count = np.zeros(nrows, dtype=np.int64)
+    for r, _, _ in blocks(True):
+        _, rr, ll = runs(r)
+        np.add.at(row_count, rr, ll)
+    if sum(n for n, _ in counts) != nlines:
+        raise ValueError(
+            f"{path} has {sum(n for n, _ in counts)} entry lines, "
+            f"but its header says {nlines}."
+        )
+    nnz = int(row_count.sum())
+    idx_dtype = np.int32 if max(nnz, ncols) < 2**31 else np.int64
+    indptr = np.zeros(nrows + 1, dtype=np.int64)
+    np.cumsum(row_count, out=indptr[1:])
+    del row_count
+
+    # pass 2: write each entry into its row; cursor is the next free place
+    # of each row
+    indices = np.empty(nnz, dtype=idx_dtype)
+    data = np.empty(nnz, dtype=np.float32)
+    cursor = indptr[:-1].copy()
+    for r, col, val in blocks(False):
+        start, rr, ll = runs(r)
+        dest = cursor[rr]
+        # a row with more than one run in this block: put its runs one after
+        # the other, in file order (stable sort of the runs by row)
+        o = np.argsort(rr, kind="stable")
+        sorted_len = ll[o]
+        before = np.cumsum(sorted_len)  # in sorted order: the lengths of
+        before -= sorted_len  # the earlier runs of the block
+        sorted_row = rr[o]
+        new_row = np.ones(o.size, dtype=bool)
+        np.not_equal(sorted_row[1:], sorted_row[:-1], out=new_row[1:])
+        before -= np.maximum.accumulate(np.where(new_row, before, 0))
+        dest[o] += before  # the lengths of the earlier runs of the same row
+        del o, sorted_len, before, sorted_row, new_row
+        np.add.at(cursor, rr, ll)
+        dest -= start
+        pos = np.repeat(dest, ll)
+        del start, rr, ll, dest
+        pos += np.arange(pos.size)
+        indices[pos] = col
+        data[pos] = val
+        del pos
+
+    x = csr_matrix(
+        (data, indices, indptr.astype(idx_dtype)), shape=(nrows, ncols), copy=False
+    )
+    x.sum_duplicates()  # sort the rows that came in more than one run, in place
+    if x.nnz != nnz:
+        raise ValueError(f"{path} has more than one entry for a row and column.")
+    return x
 
 
 def _add_sample_info(frydir, abc_df, quiet):

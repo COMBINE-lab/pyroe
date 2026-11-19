@@ -2,6 +2,7 @@
 
 import json
 import os
+import re
 import shutil
 import warnings
 
@@ -9,9 +10,12 @@ import anndata
 import numpy as np
 import pandas as pd
 import pytest
+import scanpy
 import scipy.io
 
+from packaging.version import Version
 from pyroe import load_fry
+from pyroe.load_fry import _read_mtx
 
 FLEX_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "flex")
 LEGACY = os.path.join(FLEX_DIR, "legacy_usa")
@@ -282,3 +286,180 @@ class TestH5adRoundTrip:
         assert np.array_equal(back.X.toarray(), adata.X.toarray())
         assert back.obs.equals(adata.obs)
         assert back.var.equals(adata.var)
+
+
+class TestReadMtx:
+    """`_read_mtx` gives the same matrix as `scanpy.read_mtx` (the old reader)."""
+
+    BLOCKS = [1, 7, 64, 1 << 20]  # small blocks put block ends inside lines
+
+    @staticmethod
+    def _write(path, text):
+        with open(path, "wb") as f:
+            f.write(text.encode())
+        return str(path)
+
+    @staticmethod
+    def _random_mtx(seed, nrows=40, ncols=30, density=0.2):
+        """MTX text with rows in random order and rows split into several runs."""
+        rng = np.random.default_rng(seed)
+        dense = rng.random((nrows, ncols)) < density
+        dense[rng.integers(nrows, size=5)] = False  # empty rows
+        r, c = np.nonzero(dense)
+        v = rng.integers(1, 1000, size=r.size) / rng.choice([1, 4, 7], size=r.size)
+        # split each row into runs and shuffle the runs
+        parts = np.split(np.arange(r.size), np.flatnonzero(rng.random(r.size) < 0.3))
+        order = np.concatenate([parts[i] for i in rng.permutation(len(parts))])
+        lines = [f"{r[i] + 1} {c[i] + 1} {float(v[i])!r}" for i in order]
+        head = ["%%MatrixMarket matrix coordinate real general", "% a comment"]
+        return "\n".join(head + [f"{nrows} {ncols} {r.size}"] + lines) + "\n"
+
+    def _assert_same(self, path, block_bytes):
+        expected = scanpy.read_mtx(path).X
+        x = _read_mtx(path, block_bytes)
+        assert type(x) is type(expected)
+        assert x.shape == expected.shape
+        for name in ["indptr", "indices", "data"]:
+            a, b = getattr(x, name), getattr(expected, name)
+            assert a.dtype == b.dtype, name
+            np.testing.assert_array_equal(a, b, err_msg=name)
+
+    @pytest.mark.parametrize("block_bytes", BLOCKS)
+    @pytest.mark.parametrize("seed", [0, 1, 2])
+    def test_random_order_and_split_rows(self, tmp_path, seed, block_bytes):
+        path = self._write(tmp_path / "m.mtx", self._random_mtx(seed))
+        self._assert_same(path, block_bytes)
+
+    @pytest.mark.parametrize("block_bytes", BLOCKS)
+    @pytest.mark.parametrize("newline", ["\n", "\r\n"])
+    def test_random_blank_lines(self, tmp_path, newline, block_bytes):
+        rng = np.random.default_rng(3)
+        lines = self._random_mtx(3).split("\n")
+        body = [x for line in lines[3:] for x in [line] + [""] * rng.integers(0, 3)]
+        body = [x if x or rng.random() < 0.5 else " \t " for x in body]
+        text = newline.join(lines[:3] + body)
+        self._assert_same(self._write(tmp_path / "m.mtx", text), block_bytes)
+
+    @pytest.mark.parametrize("block_bytes", BLOCKS)
+    @pytest.mark.parametrize(
+        "text",
+        [
+            "%%MatrixMarket matrix coordinate real general\n1 1 1\n1 1 5\n",
+            "%%MatrixMarket matrix coordinate real general\n3 4 0\n",
+            "%%MatrixMarket matrix coordinate real general\n%\n% c\n3 4 2   \n1 2 1 \n3 1 2.5\n",
+            "%%MatrixMarket matrix coordinate real general\r\n% c\r\n3 4 2\r\n1 2 1\r\n3 1 2\r\n",
+            "%%MatrixMarket matrix coordinate real general\n3 4 2\n1 2 1\n3 1 2",
+            "%%MatrixMarket matrix coordinate integer general\n3 4 2\n3 1 2\n1 2 7\n",
+            "%%MatrixMarket matrix coordinate pattern general\n3 4 2\n1 2\n3 1\n",
+            "%%MatrixMarket matrix coordinate real general\n3 4 2\n1\t2\t1\n3\t1\t2\n",
+            "%%MatrixMarket matrix array real general\n2 2\n1\n2\n3\n4\n",
+            "%%MatrixMarket matrix coordinate real general\n3 4 2\n\n1 2 1\n\n3 1 2\n\n\n",
+            "%%MatrixMarket matrix coordinate real general\n3 4 2\n1 2 1\n \t \n  3 1 2\n",
+            "%%MatrixMarket matrix coordinate real general\r\n3 4 2\r\n1 2 1\r\n\r\n3 1 2\r\n",
+            "%%MatrixMarket matrix coordinate real general\n3 4 2\n1 2 1 \n3 1 2\n   ",
+            "%%MatrixMarket matrix coordinate real symmetric\n3 3 3\n1 1 1\n3 1 2\n3 2 4\n",
+        ],
+        ids=["1x1", "no_entries", "comments_spaces", "crlf", "no_final_newline",
+             "integer", "pattern", "tabs", "array", "blank_lines", "space_lines",
+             "crlf_blank_line", "space_last_line", "symmetric"],
+    )
+    def test_same_as_old_reader(self, tmp_path, text, block_bytes):
+        self._assert_same(self._write(tmp_path / "m.mtx", text), block_bytes)
+
+    @pytest.mark.parametrize(
+        "version, stream",
+        [("1.15.3", "Parts"), ("1.12.0rc1", "Parts"), ("1.11.4", "BytesIO")],
+    )
+    def test_stream_for_scipy_version(self, tmp_path, monkeypatch, version, stream):
+        # a read()-only stream for fast_matrix_market, else a BytesIO
+        if stream == "Parts" and Version(scipy.__version__).release < (1, 12):
+            pytest.skip("the old mmread needs readline()")
+        path = self._write(tmp_path / "m.mtx", self._random_mtx(4))
+        used = []
+
+        def spy(source):
+            used.append(type(source).__name__)
+            return mmread(source)
+
+        mmread = scipy.io.mmread
+        monkeypatch.setattr(scipy, "__version__", version)
+        monkeypatch.setattr(scipy.io, "mmread", spy)
+        self._assert_same(path, 64)
+        assert set(used[1:]) == {stream}  # used[0] is the old reader
+
+    @pytest.mark.parametrize("block_bytes", BLOCKS)
+    def test_duplicate_entry_raises(self, tmp_path, block_bytes):
+        text = "%%MatrixMarket matrix coordinate real general\n3 4 3\n1 2 1\n3 1 2\n1 2 5\n"
+        with pytest.raises(ValueError, match="more than one entry for a row and column"):
+            _read_mtx(self._write(tmp_path / "m.mtx", text), block_bytes)
+
+    @pytest.mark.parametrize(
+        "text",
+        [
+            "%%MatrixMarket matrix coordinate real general\n",
+            "%%MatrixMarket matrix coordinate real general\n% a\n%\n",
+        ],
+        ids=["banner_only", "banner_and_comments"],
+    )
+    def test_no_size_line_raises(self, tmp_path, text):
+        # scanpy.read_mtx stops with "Premature EOF" on scipy >= 1.12 (on
+        # scipy 1.11 its mmread does not stop), so do not call it here
+        path = self._write(tmp_path / "m.mtx", text)
+        with pytest.raises(ValueError, match="has no size line"):
+            _read_mtx(path)
+
+    @pytest.mark.parametrize("line", [" ", "\t", "\r", "\v", "\f", "% c"])
+    def test_skipped_line_as_old_reader(self, tmp_path, line):
+        # the old reader skips some lines and refuses others; the set depends
+        # on the scipy version (fast_matrix_market from scipy 1.12)
+        text = f"%%MatrixMarket matrix coordinate real general\n3 4 2\n1 2 1\n{line}\n3 1 2\n"
+        path = self._write(tmp_path / "m.mtx", text)
+        try:
+            scanpy.read_mtx(path)
+        except ValueError:
+            with pytest.raises(ValueError, match="from file line 3 on"):
+                _read_mtx(path)
+        else:
+            self._assert_same(path, 1 << 20)
+
+    def test_error_gives_the_first_line_of_the_block(self, tmp_path):
+        lines = ["%%MatrixMarket matrix coordinate real general", "% c", "5 5 3000"]
+        body = [f"{1 + i % 5} {1 + (i // 5) % 5} 1" for i in range(3000)]
+        body[2500] = "x y z"  # file line 2504
+        path = self._write(tmp_path / "m.mtx", "\n".join(lines + body) + "\n")
+        with pytest.raises(ValueError, match="from file line") as e:
+            _read_mtx(path, 4096)
+        message = e.value.args[0]
+        first = int(re.search(r"from file line ([0-9]+) on", message).group(1))
+        assert f"(line 3 in the message below is file line {first})" in message
+        assert first <= 2504 < first + 4096 // 6
+        assert e.value.__cause__ is not None
+        if Version(scipy.__version__).release >= (1, 12):
+            # fast_matrix_market gives the line in the block (2 header lines)
+            inner = int(re.search(r"Line ([0-9]+):", str(e.value.__cause__)).group(1))
+            assert first + inner - 3 == 2504
+
+    @pytest.mark.parametrize("nnz", [1, 3])
+    def test_wrong_header_count_raises(self, tmp_path, nnz):
+        text = f"%%MatrixMarket matrix coordinate real general\n3 4 {nnz}\n1 2 1\n3 1 2\n"
+        with pytest.raises(ValueError):
+            _read_mtx(self._write(tmp_path / "m.mtx", text), 4)
+
+    def test_load_fry_array_format_same_as_coordinate(self, tmp_path, flex_gene):
+        d = _copy_fixture(tmp_path, "flex_gene")
+        path = os.path.join(d, "alevin", "quants_mat.mtx")
+        scipy.io.mmwrite(path, scipy.io.mmread(path).toarray())  # array format
+        with open(path) as f:
+            assert " array " in f.readline()
+        af = load_fry(d, quiet=True)
+        assert af.X.dtype == flex_gene.X.dtype
+        assert af.X.indices.dtype == flex_gene.X.indices.dtype
+        assert (af.X != flex_gene.X).nnz == 0
+        pd.testing.assert_frame_equal(af.obs, flex_gene.obs)
+        pd.testing.assert_frame_equal(af.var, flex_gene.var)
+
+    def test_load_fry_x_is_read_mtx(self, flex_gene):
+        expected = _read_mtx(os.path.join(FLEX_GENE, "alevin", "quants_mat.mtx"))
+        assert flex_gene.X.dtype == np.float32
+        assert flex_gene.X.indices.dtype == expected.indices.dtype
+        assert (flex_gene.X != expected).nnz == 0
