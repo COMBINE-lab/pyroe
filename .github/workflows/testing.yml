@@ -9,13 +9,12 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-    - name: Add conda to system path
-      run: |
-        # $CONDA is an environment variable pointing to the root of the miniconda directory
-        echo $CONDA/bin >> $GITHUB_PATH
+    - uses: actions/setup-python@v5
+      with:
+        python-version: "3.10"
     - name: Install dependencies
       run: |
-        conda install -n base -c bioconda -c conda-forge python=3.10 packaging pandas scanpy pytest -y
+        pip install packaging pandas scanpy pytest
 
     - name: pytest
       run: |
